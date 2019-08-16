@@ -4,7 +4,7 @@ const port = 3000
 
 const pool = require('./db.js')
 
-app.get('/', (req, res) => res.send('Hello World!'))
+app.use(express.static('front/dist'))
 
 app.get('/:site', (req, res) => {
     pool.query('SELECT * FROM bdr_test', (error, result) => {
