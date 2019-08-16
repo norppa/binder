@@ -1,13 +1,19 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import './index.css';
+import { BrowserRouter, Switch, Route } from 'react-router-dom'
 
-class App extends React.Component{
-    render(){
-        return(
-            <div>Hello World from Front End</div>
-        )
-    }
+function Router() {
+  return (
+    <BrowserRouter>
+        <Switch>
+            <Route path="/" exact component={Foo} />
+            <Route path="/:site" component={Bar} />
+        </Switch>
+    </BrowserRouter>
+  );
 }
 
-ReactDOM.render(<App />, document.getElementById('app'))
+const Foo = () => (<div>foo</div>)
+const Bar = ({ match }) => (<div>site: {match.params.site}</div>)
+
+ReactDOM.render(<Router />, document.getElementById('app'))
