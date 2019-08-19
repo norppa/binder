@@ -28,24 +28,16 @@ const error = (e) => {
 }
 
 app.get('/api', (req, res) => {
-    pool.query('SELECT name FROM bdr_sites', (error, result) => {
-        if (error) {
-            console.error(error)
-            res.status(500).send(error)
-            return
-        }
-        res.send(result.map(site => site.name))
+    pool.query('SELECT name FROM bdr_sites', (err, results) => {
+        if (err) return error(err)
+        res.send(results.map(result => result.name))
     })
 })
 
 app.get('/api/:site', (req, res) => {
-    pool.query('SELECT id FROM bdr_sites WHERE name = ?', req.params.site, (error, result) => {
-        if (error) {
-            console.error(error)
-            res.status(500).send(error)
-            return
-        }
-        res.send(result.length > 0)
+    pool.query('SELECT name FROM bdr_sites WHERE name = ?', req.params.site, (err, results) => {
+        if (err) return error(err)
+        res.send(results.length > 0)
     })
 })
 
