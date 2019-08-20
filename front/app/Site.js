@@ -50,33 +50,39 @@ class Site extends React.Component {
             .then(response => response.data)
             .catch(error => console.error(error))
 
+    Modals = () => (
+        <div className="Modals">
+            <Modal isOpen={this.state.modal === 'login'}
+                contentLabel={`Please log in to ${this.state.name}`}>
+                <h2>Log in to /{this.state.name}</h2>
+                <form onSubmit={this.login}>
+                    <input type="password"
+                        value={this.state.passwordValue}
+                        onChange={this.handlePasswordValueChange} />
+                </form>
+            </Modal>
+
+            <Modal isOpen={this.state.modal === 'create'}>
+                <h2>Create /{this.state.name}</h2>
+                <form onSubmit={this.create}>
+                    <input type="password"
+                        value={this.state.passwordValue}
+                        onChange={this.handlePasswordValueChange} />
+                </form>
+            </Modal>
+
+            <Modal isOpen={this.state.modal === 'error'}>
+                <h2>There was an error!</h2>
+            </Modal>
+        </div>
+    )
+
     render () {
         return (
             <div className="Site">
                 Site
-                <Modal isOpen={this.state.modal === 'login'}
-                    contentLabel={`Please log in to ${this.state.name}`}>
-                    <h2>Log in to /{this.state.name}</h2>
-                    <form onSubmit={this.login}>
-                        <input type="password"
-                            value={this.state.passwordValue}
-                            onChange={this.handlePasswordValueChange} />
-                    </form>
-                </Modal>
 
-                <Modal isOpen={this.state.modal === 'create'}>
-                    <h2>Create /{this.state.name}</h2>
-                    <form onSubmit={this.create}>
-                        <input type="password"
-                            value={this.state.passwordValue}
-                            onChange={this.handlePasswordValueChange} />
-                    </form>
-                </Modal>
-
-                <Modal isOpen={this.state.modal === 'error'}>
-                    <h2>There was an error!</h2>
-                </Modal>
-
+                <this.Modals />
             </div>
 
         )
