@@ -22,21 +22,21 @@ const authenticate = (req, res, next) => {
     }
 }
 
-const error = (e) => {
+const error = (e, res) => {
     console.error(e)
     return res.status(500).send(e)
 }
 
 app.get('/api', (req, res) => {
     pool.query('SELECT name FROM bdr_sites', (err, results) => {
-        if (err) return error(err)
+        if (err) return error(err, res)
         res.send(results.map(result => result.name))
     })
 })
 
 app.get('/api/:site', (req, res) => {
     pool.query('SELECT name FROM bdr_sites WHERE name = ?', req.params.site, (err, results) => {
-        if (err) return error(err)
+        if (err) return error(err, res)
         res.send(results.length > 0)
     })
 })
@@ -91,14 +91,14 @@ app.post('/api/:site/login', (req, res) => {
 
 app.get('/api/:site/files', authenticate, (req, res) => {
     pool.query('SELECT id, name FROM bdr_files WHERE fk_site = ?', req.params.site, (err, results) => {
-        if (err) return error(err)
+        if (err) return error(err, res)
         res.send(results)
     })
 })
 
 app.get('/api/:site/files/:id', authenticate, (req, res) => {
     pool.query('SELECT content FROM bdr_files WHERE id = ?', req.params.id, (err, results) => {
-        if (err) return error(err)
+        if (err) return error(err, res)
         if (results.length === 0) return res.send('not found')
         const result = results[0].content
         res.send(result)
@@ -114,7 +114,7 @@ app.post('/api/:site/files', authenticate, (req, res) => {
         content: req.body.contents
     }
     pool.query('INSERT INTO bdr_files SET ?', file, (err, results) => {
-        if (err) return error(err)
+        if (err) return error(err, res)
         console.log(results)
         return res.send({...file, id: results.insertId})
     })
@@ -125,14 +125,14 @@ app.put('/api/:site/files/:id', authenticate, (req, res) => {
     if (!name || !contents) return res.status(400).send('missing file name or contents')
     const values = [ req.body.name, req.body.contents, req.params.id ]
     pool.query('UPDATE bdr_files SET name = ?, content = ? WHERE id = ?', values, (err, results) => {
-        if (err) return error(err)
+        if (err) return error(err, res)
         return res.send({ id: req.params.id, name: req.body.name, content: req.body.contents })
     })
 })
 
 app.delete('/api/:site/files/:id', authenticate, (req, res) => {
     pool.query('DELETE FROM bdr_files WHERE id = ?', req.params.id, (err, results) => {
-        if (err) return error(err)
+        if (err) return error(err, res)
         return res.status(204).send()
     })
 })

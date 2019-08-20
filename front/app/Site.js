@@ -2,8 +2,6 @@ import React from 'react'
 import Modal from 'react-modal'
 import axios from 'axios'
 
-import Login from './Login'
-
 const api = 'http://localhost:3000/api'
 
 const Empty = () => null
@@ -11,56 +9,74 @@ const Create = () => <div>create</div>
 const Authorized = () => <div>authorized</div>
 Modal.setAppElement('#app')
 
-
 class Site extends React.Component {
     state = {
         auth: undefined,
         name: this.props.match.params.site,
+        modal: false,
         loginModalOpen: false,
+        createModalOpen: false,
         passwordValue: ''
     }
 
-    openLoginModal = () => this.setState({ loginModalOpen: true })
-    closeLoginModal = () => this.setState({ loginModalOpen: false })
     handlePasswordValueChange = (event) => this.setState({ passwordValue: event.target.value })
+    openModal = (type) => () => this.setState({ modal: type })
+    closeModal = () => this.setState({ modal: false })
     login = (event) => {
         event.preventDefault()
-        console.log('foo')
-        this.closeLoginModal()
+        console.log('log in to site', this.props.match.params.site )
+        this.closeModal()
+    }
+    create = (event) => {
+        event.preventDefault()
+        console.log('create site', this.props.match.params.site )
+        this.closeModal()
     }
 
     async componentDidMount() {
-        console.log('trying')
-        const site = this.props.match.params.site
-        const localStorageKey = 'binder_' + site
-        const token = window.localStorage.getItem(localStorageKey)
-        if (token) {
-            this.setState({ auth: token})
+        const siteExists = await this.siteExists(this.props.match.params.site)
+        console.log('site exists', siteExists)
+        if (siteExists === undefined) {
+            this.setState({ modal: 'error' })
+        } else if (siteExists) {
+            this.setState({ modal: 'login' })
         } else {
-            if(await this.siteExists(site)) {
-                this.setState({ loginModalOpen: true })
-            }
+            this.setState({ modal: 'create' })
         }
 
     }
 
     siteExists = (site) => axios.get(`${api}/${site}`)
             .then(response => response.data)
+            .catch(error => console.error(error))
 
     render () {
         return (
             <div className="Site">
                 Site
-                <Modal isOpen={this.state.loginModalOpen}
+                <Modal isOpen={this.state.modal === 'login'}
                     contentLabel={`Please log in to ${this.state.name}`}>
-                    <h2>Enter password for /{this.state.name}</h2>
+                    <h2>Log in to /{this.state.name}</h2>
                     <form onSubmit={this.login}>
                         <input type="password"
                             value={this.state.passwordValue}
                             onChange={this.handlePasswordValueChange} />
                     </form>
-                    <button onClick={this.closeLoginModal}>close</button>
                 </Modal>
+
+                <Modal isOpen={this.state.modal === 'create'}>
+                    <h2>Create /{this.state.name}</h2>
+                    <form onSubmit={this.create}>
+                        <input type="password"
+                            value={this.state.passwordValue}
+                            onChange={this.handlePasswordValueChange} />
+                    </form>
+                </Modal>
+
+                <Modal isOpen={this.state.modal === 'error'}>
+                    <h2>There was an error!</h2>
+                </Modal>
+
             </div>
 
         )
