@@ -1,6 +1,9 @@
 import React from 'react'
 import Modal from 'react-modal'
 import axios from 'axios'
+import TreeView from 'deni-react-treeview'
+
+import '../node_modules/react-super-treeview/dist/style.css'
 
 const api = 'http://localhost:3000/api'
 
@@ -14,23 +17,70 @@ class Site extends React.Component {
         auth: undefined,
         name: this.props.match.params.site,
         modal: false,
-        loginModalOpen: false,
-        createModalOpen: false,
-        passwordValue: ''
+        incorrectPasswordMessage: false,
+        passwordValue: '',
+        data: [],
+        contents: ''
     }
 
     handlePasswordValueChange = (event) => this.setState({ passwordValue: event.target.value })
     openModal = (type) => () => this.setState({ modal: type })
-    closeModal = () => this.setState({ modal: false })
+    closeModal = () => this.setState({ modal: false, incorrectPasswordMessage: false })
     login = (event) => {
         event.preventDefault()
-        console.log('log in to site', this.props.match.params.site )
-        this.closeModal()
+        axios.post(`${api}/${this.props.match.params.site}/login`, { password: this.state.passwordValue })
+            .then(response => {
+                if (response.status === 200) {
+                    this.setState({ auth: response.data.token }, this.getFiles)
+                    this.closeModal()
+                }
+            })
+            .catch(error => {
+                if (error.response.status === 401) {
+                    this.setState({ incorrectPasswordMessage: true })
+                }
+            })
     }
     create = (event) => {
         event.preventDefault()
         console.log('create site', this.props.match.params.site )
         this.closeModal()
+    }
+
+    getFiles = () => {
+        axios.get(`${api}/${this.props.match.params.site}/files`, { headers: { Authorization: 'bearer ' + this.state.auth }})
+            .then(response => {
+                let idCounter = 0
+                let data = []
+                const files = response.data
+
+                files.forEach(file => {
+                    console.log('processing file ', file)
+                    const folders = file.path.split('/').slice(1, -1)
+                    let node = data
+                    folders.forEach(folder => {
+                        let match = node.find(item => item.name === folder)
+                        if (!match) {
+                            match = {
+                                id: idCounter++,
+                                text: folder,
+                                children: []
+                            }
+                            node.push(match)
+                        }
+                        node = match.children
+                    })
+                    node.push({
+                        id: idCounter++,
+                        text: file.name,
+                        isLeaf: true
+                    })
+                    console.log('node', node)
+                    console.log('data', data)
+                    console.log('idCounter', idCounter)
+                })
+                this.setState({ data })
+            })
     }
 
     async componentDidMount() {
@@ -54,6 +104,7 @@ class Site extends React.Component {
         <div className="Modals">
             <Modal isOpen={this.state.modal === 'login'}
                 contentLabel={`Please log in to ${this.state.name}`}>
+                {this.state.incorrectPasswordMessage ? <div>Incorrect Password!</div> : null}
                 <h2>Log in to /{this.state.name}</h2>
                 <form onSubmit={this.login}>
                     <input type="password"
@@ -77,11 +128,15 @@ class Site extends React.Component {
         </div>
     )
 
+    onSelectItem = (item) => {
+        console.log('onSelectItem', x)
+    }
+
     render () {
         return (
-            <div className="Site">
-                Site
-
+            <div>
+                <TreeView items={this.state.data}
+                    onSelectItem={this.onSelectItem} />
                 <this.Modals />
             </div>
 

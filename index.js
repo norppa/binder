@@ -90,7 +90,7 @@ app.post('/api/:site/login', (req, res) => {
 })
 
 app.get('/api/:site/files', authenticate, (req, res) => {
-    pool.query('SELECT id, name FROM bdr_files WHERE fk_site = ?', req.params.site, (err, results) => {
+    pool.query('SELECT id, name, path FROM bdr_files WHERE fk_site = ?', req.params.site, (err, results) => {
         if (err) return error(err, res)
         res.send(results)
     })
