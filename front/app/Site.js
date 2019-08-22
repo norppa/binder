@@ -2,8 +2,7 @@ import React from 'react'
 import Modal from 'react-modal'
 import axios from 'axios'
 import TreeView from 'deni-react-treeview'
-
-import '../node_modules/react-super-treeview/dist/style.css'
+import './Site.css'
 
 const api = 'http://localhost:3000/api'
 
@@ -71,7 +70,7 @@ class Site extends React.Component {
                         node = match.children
                     })
                     node.push({
-                        id: idCounter++,
+                        id: file.id,
                         text: file.name,
                         isLeaf: true
                     })
@@ -129,14 +128,25 @@ class Site extends React.Component {
     )
 
     onSelectItem = (item) => {
-        console.log('onSelectItem', x)
+        if (!item.isLeaf) return undefined
+        axios.get(`${api}/${this.props.match.params.site}/files/${item.id}`, { headers: { Authorization: 'bearer ' + this.state.auth }})
+            .then(result => {
+                this.setState({contents: result.data})
+            })
+        console.log('onSelectItem', item)
     }
+
+    handleChange = (event) => this.setState({ contents: event.target.value })
 
     render () {
         return (
             <div>
-                <TreeView items={this.state.data}
+                <TreeView className="navi-tree"
+                    items={this.state.data}
                     onSelectItem={this.onSelectItem} />
+
+                <textarea value={this.state.contents}
+                    onChange={this.handleChange}/>
                 <this.Modals />
             </div>
 
