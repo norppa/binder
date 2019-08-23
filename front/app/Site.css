@@ -1,3 +1,13 @@
+.Site {
+    display: grid;
+    grid-template-rows: auto;
+    grid-template-columns: 300px auto;
+    grid-column-gap: 10px;
+
+    background-color: #425270;
+    padding: 5px;
+}
+
 .navi-tree {
     display: inline-block;
     width: 300px;

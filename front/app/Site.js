@@ -140,13 +140,15 @@ class Site extends React.Component {
 
     render () {
         return (
-            <div>
+            <div className="Site">
                 <TreeView className="navi-tree"
+                    theme="metro"
                     items={this.state.data}
                     onSelectItem={this.onSelectItem} />
 
                 <textarea value={this.state.contents}
                     onChange={this.handleChange}/>
+
                 <this.Modals />
             </div>
 
