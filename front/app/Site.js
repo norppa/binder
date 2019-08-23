@@ -22,6 +22,25 @@ class Site extends React.Component {
         contents: ''
     }
 
+    async componentDidMount() {
+        const site = this.props.match.params.site
+        const siteExists = await this.siteExists(site)
+        const token = window.sessionStorage.getItem
+        if (siteExists === undefined) {
+            this.setState({ modal: 'error' })
+        } else if (siteExists) {
+            const token = window.sessionStorage.getItem(`${site}_token`)
+            if (token) {
+                this.setState({ auth: token }, this.getFiles)
+            } else {
+                this.setState({ modal: 'login' })
+            }
+        } else {
+            this.setState({ modal: 'create' })
+        }
+
+    }
+
     handlePasswordValueChange = (event) => this.setState({ passwordValue: event.target.value })
     openModal = (type) => () => this.setState({ modal: type })
     closeModal = () => this.setState({ modal: false, incorrectPasswordMessage: false })
@@ -30,6 +49,7 @@ class Site extends React.Component {
         axios.post(`${api}/${this.props.match.params.site}/login`, { password: this.state.passwordValue })
             .then(response => {
                 if (response.status === 200) {
+                    window.sessionStorage.setItem(this.props.match.params.site + '_token', response.data.token)
                     this.setState({ auth: response.data.token }, this.getFiles)
                     this.closeModal()
                 }
@@ -82,19 +102,6 @@ class Site extends React.Component {
             })
     }
 
-    async componentDidMount() {
-        const siteExists = await this.siteExists(this.props.match.params.site)
-        console.log('site exists', siteExists)
-        if (siteExists === undefined) {
-            this.setState({ modal: 'error' })
-        } else if (siteExists) {
-            this.setState({ modal: 'login' })
-        } else {
-            this.setState({ modal: 'create' })
-        }
-
-    }
-
     siteExists = (site) => axios.get(`${api}/${site}`)
             .then(response => response.data)
             .catch(error => console.error(error))
@@ -139,6 +146,7 @@ class Site extends React.Component {
     handleChange = (event) => this.setState({ contents: event.target.value })
 
     render () {
+        // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
         return (
             <div className="Site">
                 <TreeView className="navi-tree"
