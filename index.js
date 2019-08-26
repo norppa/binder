@@ -90,43 +90,49 @@ app.post('/api/:site/login', (req, res) => {
 })
 
 app.get('/api/:site/files', authenticate, (req, res) => {
-    pool.query('SELECT id, name, path FROM bdr_files WHERE fk_site = ?', req.params.site, (err, results) => {
+    pool.query('SELECT id, name, isFolder, parent FROM bdr_files WHERE fk_site = ?', req.params.site, (err, results) => {
         if (err) return error(err, res)
         res.send(results)
     })
 })
 
 app.get('/api/:site/files/:id', authenticate, (req, res) => {
-    pool.query('SELECT content FROM bdr_files WHERE id = ?', req.params.id, (err, results) => {
+    pool.query('SELECT contents FROM bdr_files WHERE id = ?', req.params.id, (err, results) => {
         if (err) return error(err, res)
         if (results.length === 0) return res.send('not found')
-        const result = results[0].content
+        const result = results[0].contents
         res.send(result)
     })
 })
 
 app.post('/api/:site/files', authenticate, (req, res) => {
-    const { name, contents } = req.body
-    if (!name || !contents) return res.status(400).send('missing file name or contents')
-    const file = {
-        fk_site: req.params.site,
-        name: req.body.name,
-        content: req.body.contents
+    const { name, contents, isFolder, parent } = req.body
+    if (!name) return res.send({error: 'missing name', request: req.body }, 400)
+    if (isFolder && contents) return res.send({error: 'folders can not have contents', request: req.body }, 400)
+    if (!isFolder && !contents) return res.send({error: 'files require contents', request: req.body }, 400)
+    const params = {
+        name,
+        contents,
+        isFolder,
+        parent,
+        fk_site: req.params.site
     }
-    pool.query('INSERT INTO bdr_files SET ?', file, (err, results) => {
+    pool.query('INSERT INTO bdr_files SET ?', params, (err, results) => {
         if (err) return error(err, res)
-        console.log(results)
-        return res.send({...file, id: results.insertId})
+        return res.send({ id: results.insertId})
     })
 })
 
 app.put('/api/:site/files/:id', authenticate, (req, res) => {
-    const { name, contents } = req.body
-    if (!name || !contents) return res.status(400).send('missing file name or contents')
-    const values = [ req.body.name, req.body.contents, req.params.id ]
-    pool.query('UPDATE bdr_files SET name = ?, content = ? WHERE id = ?', values, (err, results) => {
+    const { name, contents, isFolder, parent } = req.body
+    if (!name) return res.send({error: 'missing name', request: req.body }, 400)
+    if (isFolder && contents) return res.send({error: 'folders can not have contents', request: req.body }, 400)
+    if (!isFolder && !contents) return res.send({error: 'files require contents', request: req.body }, 400)
+
+    const params = [ name, isFolder, contents, parent, req.params.id ]
+    pool.query('UPDATE bdr_files SET name = ?, isFolder = ?, contents = ?, parent = ? WHERE id = ?', params, (err, results) => {
         if (err) return error(err, res)
-        return res.send({ id: req.params.id, name: req.body.name, content: req.body.contents })
+        return res.send({ id: req.params.id, name, isFolder, contents, parent })
     })
 })
 

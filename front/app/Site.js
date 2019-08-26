@@ -18,8 +18,9 @@ class Site extends React.Component {
         modal: false,
         incorrectPasswordMessage: false,
         passwordValue: '',
-        data: [],
-        contents: ''
+        fileStructure: [],
+        contents: '',
+        selected: null
     }
 
     async componentDidMount() {
@@ -66,40 +67,36 @@ class Site extends React.Component {
         this.closeModal()
     }
 
-    getFiles = () => {
-        axios.get(`${api}/${this.props.match.params.site}/files`, { headers: { Authorization: 'bearer ' + this.state.auth }})
-            .then(response => {
-                let idCounter = 0
-                let data = []
-                const files = response.data
+     getFiles = async () => {
+        const url = api + '/' + this.props.match.params.site + '/files'
+        const headers = { headers: { Authorization: 'bearer ' + this.state.auth }}
 
-                files.forEach(file => {
-                    console.log('processing file ', file)
-                    const folders = file.path.split('/').slice(1, -1)
-                    let node = data
-                    folders.forEach(folder => {
-                        let match = node.find(item => item.name === folder)
-                        if (!match) {
-                            match = {
-                                id: idCounter++,
-                                text: folder,
-                                children: []
-                            }
-                            node.push(match)
-                        }
-                        node = match.children
-                    })
-                    node.push({
-                        id: file.id,
-                        text: file.name,
-                        isLeaf: true
-                    })
-                    console.log('node', node)
-                    console.log('data', data)
-                    console.log('idCounter', idCounter)
-                })
-                this.setState({ data })
+        let fileList = await fetch(url, headers).then(response => response.json())
+
+        console.log('response', fileList)
+
+        const toTreeNode = (listItem) => {
+            const treeNode = { id: listItem.id, text: listItem.name }
+            if (!listItem.isFolder) {
+                treeNode.isLeaf = true
+            }
+            return treeNode
+        }
+
+        const getChildrenOf = (parentId) => {
+            const children = fileList.filter(x => x.parent === parentId).map(toTreeNode)
+            fileList = fileList.filter(x => x.parent !== parentId)
+            children.forEach(node => {
+                if (!node.isLeaf) {
+                    node.children = getChildrenOf(node.id)
+                }
             })
+            return children
+        }
+
+        const tree = getChildrenOf(null)
+        this.setState({ fileStructure: tree })
+
     }
 
     siteExists = (site) => axios.get(`${api}/${site}`)
@@ -135,11 +132,14 @@ class Site extends React.Component {
     )
 
     onSelectItem = (item) => {
-        if (!item.isLeaf) return undefined
+        console.log(item, typeof item, JSON.stringify(item))
+        this.setState({ debug: JSON.stringify(item) })
+        if (item.isLeaf) {
         axios.get(`${api}/${this.props.match.params.site}/files/${item.id}`, { headers: { Authorization: 'bearer ' + this.state.auth }})
             .then(result => {
                 this.setState({contents: result.data})
             })
+        }
         console.log('onSelectItem', item)
     }
 
@@ -149,10 +149,21 @@ class Site extends React.Component {
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
         return (
             <div className="Site">
-                <TreeView className="navi-tree"
-                    theme="metro"
-                    items={this.state.data}
-                    onSelectItem={this.onSelectItem} />
+                <div className="navi">
+                    <div className="navi-btns">
+                        <button>new file</button>
+                        <button>new folder</button>
+                        <button>delete</button>
+                    </div>
+                    <TreeView className="navi-tree"
+                        theme="metro"
+                        items={this.state.fileStructure}
+                        onSelectItem={this.onSelectItem} />
+                    <div className="debug-info">
+                        {this.state.debug}
+                    </div>
+                </div>
+
 
                 <textarea value={this.state.contents}
                     onChange={this.handleChange}/>
