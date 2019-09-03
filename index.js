@@ -127,15 +127,41 @@ app.post('/api/:site/files', authenticate, (req, res) => {
 })
 
 app.put('/api/:site/files/:id', authenticate, (req, res) => {
-    const { name, contents, isFolder, parent } = req.body
-    if (!name) return res.send({error: 'missing name', request: req.body }, 400)
-    if (isFolder && contents) return res.send({error: 'folders can not have contents', request: req.body }, 400)
-    if (!isFolder && !contents) return res.send({error: 'files require contents', request: req.body }, 400)
+    const { name, contents, parent } = req.body
 
-    const params = [ name, isFolder, contents, parent, req.params.id ]
-    pool.query('UPDATE bdr_files SET name = ?, isFolder = ?, contents = ?, parent = ? WHERE id = ?', params, (err, results) => {
+    let params = []
+    let query = 'UPDATE bdr_files SET'
+
+    if (name) {
+        params = params.concat(name)
+        if (query.charAt(query.length-1) === '?') {
+            query += ','
+        }
+        query += ' name = ?'
+    }
+    if (contents) {
+        params = params.concat(contents)
+        if (query.charAt(query.length-1) === '?') {
+            query += ','
+        }
+        query += ' contents = ?'
+    }
+    if (parent) {
+        params = params.concat(parent)
+        if (query.charAt(query.length-1) === '?') {
+            query += ','
+        }
+        query += ' parent = ?'
+    }
+
+    params = params.concat(req.params.id)
+    query += ' WHERE id = ?'
+    console.log('query, params', query, params)
+
+    // const params = [ parent, req.params.id ]
+    pool.query(query, params, (err, results) => {
         if (err) return error(err, res)
-        return res.send({ id: req.params.id, name, isFolder, contents, parent })
+        return res.send({ id: req.params.id, name, contents, parent })
     })
 })
 
