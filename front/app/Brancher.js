@@ -1,19 +1,20 @@
 import React from 'react'
 import './Brancher.css'
 import { FaFileAlt, FaFolder, FaFolderOpen } from 'react-icons/fa'
+import { TiFolder, TiFolderOpen, TiDocumentText } from 'react-icons/ti'
 
 const Node = ({file, select}) => {
     const { id, name, children, expanded, selected } = file
-    const icon = (children ? (expanded ? <FaFolderOpen /> : <FaFolder />) : <FaFileAlt />)
+    const Icon = (children ? (expanded ? TiFolderOpen : TiFolder) : TiDocumentText)
     const classNames = 'name' + (selected ? ' selected' : '')
 
     return (
         <div className="brancher-node">
-            <span className={classNames} onClick={select(id)}>
-                {icon} {file.name}
-            </span>
+            <div className={classNames} onClick={select(id)}>
+                <Icon size={30} className="icon" /> {file.name}
+            </div>
             {file.expanded ?
-            <div className="brancher-folder-children">
+            <div className="brancher-node-children">
                 {file.children.map(x => <Node key={x.id} file={x} select={select}/>)}
             </div>
             : null}
