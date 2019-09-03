@@ -1,8 +1,9 @@
 import React from 'react'
 import Modal from 'react-modal'
 import axios from 'axios'
-import TreeView from 'deni-react-treeview'
 import './Site.css'
+
+import Brancher from './Brancher'
 
 const api = 'http://localhost:3000/api'
 
@@ -19,8 +20,9 @@ class Site extends React.Component {
         incorrectPasswordMessage: false,
         passwordValue: '',
         fileStructure: [],
-        contents: '',
-        selected: null
+        currentFile: {},
+        currentFolderId: null,
+        brancherData:  []
     }
 
     async componentDidMount() {
@@ -67,18 +69,19 @@ class Site extends React.Component {
         this.closeModal()
     }
 
-     getFiles = async () => {
+    getFiles = async () => {
         const url = api + '/' + this.props.match.params.site + '/files'
         const headers = { headers: { Authorization: 'bearer ' + this.state.auth }}
 
         let fileList = await fetch(url, headers).then(response => response.json())
 
-        console.log('response', fileList)
-
         const toTreeNode = (listItem) => {
-            const treeNode = { id: listItem.id, text: listItem.name }
-            if (!listItem.isFolder) {
-                treeNode.isLeaf = true
+            const treeNode = {
+                id: listItem.id,
+                name: listItem.name
+            }
+            if (listItem.isFolder) {
+                treeNode.children = true
             }
             return treeNode
         }
@@ -87,7 +90,7 @@ class Site extends React.Component {
             const children = fileList.filter(x => x.parent === parentId).map(toTreeNode)
             fileList = fileList.filter(x => x.parent !== parentId)
             children.forEach(node => {
-                if (!node.isLeaf) {
+                if (node.children) {
                     node.children = getChildrenOf(node.id)
                 }
             })
@@ -95,7 +98,8 @@ class Site extends React.Component {
         }
 
         const tree = getChildrenOf(null)
-        this.setState({ fileStructure: tree })
+        console.log('tree', tree)
+        this.setState({ brancherData: tree })
 
     }
 
@@ -131,41 +135,101 @@ class Site extends React.Component {
         </div>
     )
 
-    onSelectItem = (item) => {
-        console.log(item, typeof item, JSON.stringify(item))
-        this.setState({ debug: JSON.stringify(item) })
-        if (item.isLeaf) {
-        axios.get(`${api}/${this.props.match.params.site}/files/${item.id}`, { headers: { Authorization: 'bearer ' + this.state.auth }})
-            .then(result => {
-                this.setState({contents: result.data})
-            })
+    onClickDelete = async (event) => {
+        const url = api + '/' + this.props.match.params.site + '/files/' + this.state.currentFile.id
+        const headers = {
+            method: 'DELETE',
+            headers: { Authorization: 'bearer ' + this.state.auth }
         }
-        console.log('onSelectItem', item)
+
+        const fetchResult = await fetch(url, headers)
+        if (fetchResult.status === 204) {
+            const treeviewApi = this.treeview.current.api
+            treeviewApi.removeItem(this.state.currentFile.id)
+        }
+
+    }
+
+    onClickNewFile = async (event) => {
+        console.log('onClickNewFile', this.state.currentFolderId)
+        const url = api + '/' + this.props.match.params.site + '/files'
+        const headers = {
+            method: 'POST',
+            body: JSON.stringify({
+                name: 'new_file_1',
+                contents: '',
+                isFolder: false,
+                parent: this.state.currentFolderId
+            }),
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'bearer ' + this.state.auth
+            }
+        }
+        const fetchResult = await fetch(url, headers)
+        if (fetchResult.status === 200) {
+            const body = await fetchResult.json()
+            const createdId = body.id
+
+            const treeviewApi = this.treeview.current.api
+            console.log('XXX', this.state.currentFolderId)
+            console.log(treeviewApi.getItems())
+            const parentNode = this.state.currentFolderId
+                ? treeviewApi.findFolder(this.state.currentFolderId)
+                : treeviewApi.getRootItem()
+            treeviewApi.addItem('new_file_1', true, parentNode)
+            this.setState
+        }
     }
 
     handleChange = (event) => this.setState({ contents: event.target.value })
 
+    brancherSetData = (brancherData) => this.setState({ brancherData })
+    brancherOnSelect = async ({ selected, parent }) => {
+        if (!selected.children) {
+            const url = api + '/' + this.props.match.params.site + '/files/' + selected.id
+            const headers = {
+                method: 'GET',
+                headers: { Authorization: 'bearer ' + this.state.auth }
+            }
+            const fetchResult = await fetch(url, headers)
+            if (fetchResult.status === 200) {
+                const body = await fetchResult.json()
+                console.log('body', body)
+
+                const currentFile = {
+                    id: selected.id,
+                    name: body.name,
+                    contents: body.contents
+                }
+                const currentFolder = body.parent
+                this.setState({ currentFile, currentFolder })
+            }
+
+        }
+    }
+
     render () {
+        console.log('rendering Site', this.state.brancherData)
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
         return (
             <div className="Site">
                 <div className="navi">
                     <div className="navi-btns">
-                        <button>new file</button>
+                        <button onClick={this.onClickNewFile}>new file</button>
                         <button>new folder</button>
-                        <button>delete</button>
+                        <button onClick={this.onClickDelete}>delete</button>
                     </div>
-                    <TreeView className="navi-tree"
-                        theme="metro"
-                        items={this.state.fileStructure}
-                        onSelectItem={this.onSelectItem} />
+                    <Brancher data={this.state.brancherData}
+                        setData={this.brancherSetData}
+                        onSelect={this.brancherOnSelect} />
                     <div className="debug-info">
                         {this.state.debug}
                     </div>
                 </div>
 
 
-                <textarea value={this.state.contents}
+                <textarea value={this.state.currentFile.contents}
                     onChange={this.handleChange}/>
 
                 <this.Modals />

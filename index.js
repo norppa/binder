@@ -97,19 +97,22 @@ app.get('/api/:site/files', authenticate, (req, res) => {
 })
 
 app.get('/api/:site/files/:id', authenticate, (req, res) => {
-    pool.query('SELECT contents FROM bdr_files WHERE id = ?', req.params.id, (err, results) => {
+    pool.query('SELECT name, contents, isFolder, parent FROM bdr_files WHERE id = ?', req.params.id, (err, results) => {
         if (err) return error(err, res)
         if (results.length === 0) return res.send('not found')
-        const result = results[0].contents
-        res.send(result)
+        res.send(results[0])
     })
 })
 
 app.post('/api/:site/files', authenticate, (req, res) => {
-    const { name, contents, isFolder, parent } = req.body
-    if (!name) return res.send({error: 'missing name', request: req.body }, 400)
-    if (isFolder && contents) return res.send({error: 'folders can not have contents', request: req.body }, 400)
-    if (!isFolder && !contents) return res.send({error: 'files require contents', request: req.body }, 400)
+    console.log(req.body)
+    let { name, contents, isFolder, parent } = req.body
+    console.log('post /files', name, contents, isFolder, parent)
+    if (!name) return res.status(400).send({error: 'missing name', request: req.body })
+    if (isFolder && contents) return res.status(400).send({error: 'folders can not have contents', request: req.body })
+    if (!isFolder && !contents) {
+        contents = ''
+    }
     const params = {
         name,
         contents,

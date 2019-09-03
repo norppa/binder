@@ -1,0 +1,15 @@
+.name {
+    cursor: pointer;
+}
+
+.brancher-folder {
+    border: 1px solid lightblue;
+}
+
+.brancher-folder-children {
+    margin-left: 1em;
+}
+
+.selected {
+    border: 1px solid red;
+}
