@@ -19,10 +19,10 @@ class Site extends React.Component {
         modal: false,
         incorrectPasswordMessage: false,
         passwordValue: '',
-        fileStructure: [],
-        currentFile: {},
+        currentFile: {id: undefined, name: '', contents: ''},
         currentFolderId: null,
-        brancherData:  []
+        brancherData:  [],
+        localFiles: {}
     }
 
     async componentDidMount() {
@@ -152,65 +152,84 @@ class Site extends React.Component {
 
     onClickNewFile = async (event) => {
         console.log('onClickNewFile', this.state.currentFolderId)
-        const url = api + '/' + this.props.match.params.site + '/files'
-        const headers = {
-            method: 'POST',
-            body: JSON.stringify({
-                name: 'new_file_1',
-                contents: '',
-                isFolder: false,
-                parent: this.state.currentFolderId
-            }),
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: 'bearer ' + this.state.auth
+        const newFileName = 'new file'
+        // const url = api + '/' + this.props.match.params.site + '/files'
+        // const headers = {
+        //     method: 'POST',
+        //     body: JSON.stringify({
+        //         name: newFileName,
+        //         contents: '',
+        //         isFolder: false,
+        //         parent: this.state.currentFolderId
+        //     }),
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //         Authorization: 'bearer ' + this.state.auth
+        //     }
+        // }
+        // const fetchResult = await fetch(url, headers)
+        // if (fetchResult.status === 200) {
+            // const body = await fetchResult.json()
+            const newNode = {
+                id: 'new',
+                name: newFileName,
+                selected: true
             }
-        }
-        const fetchResult = await fetch(url, headers)
-        if (fetchResult.status === 200) {
-            const body = await fetchResult.json()
-            const createdId = body.id
 
-            const treeviewApi = this.treeview.current.api
-            console.log('XXX', this.state.currentFolderId)
-            console.log(treeviewApi.getItems())
-            const parentNode = this.state.currentFolderId
-                ? treeviewApi.findFolder(this.state.currentFolderId)
-                : treeviewApi.getRootItem()
-            treeviewApi.addItem('new_file_1', true, parentNode)
-            this.setState
-        }
+            const brancherData = this.state.brancherData.concat(newNode)
+            this.setState({brancherData})
+
+
+        // }
     }
 
-    handleChange = (event) => this.setState({ contents: event.target.value })
+    updateCurrentFile = (name) => (event) => {
+        const currentFile = this.state.currentFile
+        currentFile[name] = event.target.value
+        this.setState({currentFile})
+    }
 
     brancherSetData = (brancherData) => this.setState({ brancherData })
-    brancherOnSelect = async ({ selected, parent }) => {
+
+    select = async ({ selected, parent }) => {
         if (!selected.children) {
-            const url = api + '/' + this.props.match.params.site + '/files/' + selected.id
-            const headers = {
-                method: 'GET',
-                headers: { Authorization: 'bearer ' + this.state.auth }
-            }
-            const fetchResult = await fetch(url, headers)
-            if (fetchResult.status === 200) {
-                const body = await fetchResult.json()
-                console.log('body', body)
 
-                const currentFile = {
-                    id: selected.id,
-                    name: body.name,
-                    contents: body.contents
+            // store current file in localFiles
+            const localFiles = {...this.state.localFiles}
+            localFiles[this.state.currentFile.id] = this.state.currentFile
+            this.setState({localFiles})
+
+
+            if (this.state.localFiles[selected.id]) {
+                this.setState({ currentFile: this.state.localFiles[selected.id]})
+            } else {
+                const url = api + '/' + this.props.match.params.site + '/files/' + selected.id
+                const headers = {
+                    method: 'GET',
+                    headers: { Authorization: 'bearer ' + this.state.auth }
                 }
-                const currentFolder = body.parent
-                this.setState({ currentFile, currentFolder })
-            }
+                const fetchResult = await fetch(url, headers)
+                console.log('fetchResult', url, headers, fetchResult)
+                if (fetchResult.status === 200) {
+                    const body = await fetchResult.json()
+                    console.log('body', body)
 
+                    const currentFile = {
+                        id: selected.id,
+                        name: body.name,
+                        contents: body.contents
+                    }
+                    const currentFolderId = body.parent
+                    this.setState({ currentFile, currentFolderId })
+                }
+            }
+        } else {
+            this.setState({ currentFolderId: selected.id })
         }
     }
 
     render () {
-        console.log('rendering Site', this.state.brancherData)
+        console.log('rendering Site', this.state.localFiles)
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
         return (
             <div className="Site">
@@ -222,15 +241,17 @@ class Site extends React.Component {
                     </div>
                     <Brancher data={this.state.brancherData}
                         setData={this.brancherSetData}
-                        onSelect={this.brancherOnSelect} />
+                        onSelect={this.select} />
                     <div className="debug-info">
                         {this.state.debug}
                     </div>
                 </div>
-
-
+                <div>
+                <input type="text" value={this.state.currentFile.name}
+                    onChange={this.updateCurrentFile('name')}/>
                 <textarea value={this.state.currentFile.contents}
-                    onChange={this.handleChange}/>
+                    onChange={this.updateCurrentFile('contents')}/>
+                </div>
 
                 <this.Modals />
             </div>

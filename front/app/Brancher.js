@@ -61,7 +61,6 @@ class Brancher extends React.Component {
     }
 
     render () {
-
         return (
             <div className="Brancher">
                 {this.props.data.map(x => <Node key={x.id} file={x} select={this.select}/>)}
