@@ -94,5 +94,54 @@ module.exports = class Dao {
         }
     }
 
+    async getFiles(siteName) {
+        const connection = await dbConnection()
+        try {
+            const queryStr = 'SELECT id, name, isFolder, parent FROM bdr_files WHERE fk_site = ?'
+            await connection.query('START TRANSACTION')
+            const results = await connection.query(queryStr, siteName)
+            await connection.query('COMMIT')
+            return results
+        } catch (e) {
+            console.error(e)
+            throw e
+        } finally {
+            await connection.release()
+            await connection.destroy()
+        }
+    }
+
+    async getFileDetails(fileId) {
+        const connection = await dbConnection()
+        try {
+            const queryStr = 'SELECT name, contents, isFolder, parent FROM bdr_files WHERE id = ?'
+            await connection.query('START TRANSACTION')
+            const results = await connection.query(queryStr, fileId)
+            await connection.query('COMMIT')
+            return results[0]
+        } catch (e) {
+            console.error(e)
+            throw e
+        } finally {
+            await connection.release()
+            await connection.destroy()
+        }
+    }
+
+    async deleteFile(fileId) {
+        const connection = await dbConnection()
+        try {
+            const queryStr = 'DELETE FROM bdr_files WHERE id = ?'
+            await connection.query('START TRANSACTION')
+            await connection.query(queryStr, fileId)
+            await connection.query('COMMIT')
+        } catch (e) {
+            console.error(e)
+            throw e
+        } finally {
+            await connection.release()
+            await connection.destroy()
+        }
+    }
 
 }
