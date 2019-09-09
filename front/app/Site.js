@@ -15,14 +15,12 @@ Modal.setAppElement('#app')
 class Site extends React.Component {
     state = {
         auth: undefined,
-        name: this.props.match.params.site,
         modal: false,
         incorrectPasswordMessage: false,
         passwordValue: '',
-        currentFile: {id: undefined, name: '', contents: ''},
-        currentFolderId: null,
         brancherData:  [],
-        localFiles: {}
+        localFileData: { null: {id: -1, name: '', contents: ''} },
+        selected: null
     }
 
     async componentDidMount() {
@@ -110,9 +108,9 @@ class Site extends React.Component {
     Modals = () => (
         <div className="Modals">
             <Modal isOpen={this.state.modal === 'login'}
-                contentLabel={`Please log in to ${this.state.name}`}>
+                contentLabel={`Please log in to ${this.props.match.params.site}`}>
                 {this.state.incorrectPasswordMessage ? <div>Incorrect Password!</div> : null}
-                <h2>Log in to /{this.state.name}</h2>
+                <h2>Log in to /{this.props.match.params.site}</h2>
                 <form onSubmit={this.login}>
                     <input type="password"
                         value={this.state.passwordValue}
@@ -121,7 +119,7 @@ class Site extends React.Component {
             </Modal>
 
             <Modal isOpen={this.state.modal === 'create'}>
-                <h2>Create /{this.state.name}</h2>
+                <h2>Create /{this.props.match.params.site}</h2>
                 <form onSubmit={this.create}>
                     <input type="password"
                         value={this.state.passwordValue}
@@ -184,25 +182,16 @@ class Site extends React.Component {
     }
 
     updateCurrentFile = (name) => (event) => {
-        const currentFile = this.state.currentFile
+        const currentFile = this.state.localFileData[this.state.selected]
         currentFile[name] = event.target.value
-        this.setState({currentFile})
+        this.setState({ localFileData: {...this.state.localFileData, [this.state.selected]: currentFile }})
     }
 
     brancherSetData = (brancherData) => this.setState({ brancherData })
 
-    select = async ({ selected, parent }) => {
+    select = async ({ selected }) => {
         if (!selected.children) {
-
-            // store current file in localFiles
-            const localFiles = {...this.state.localFiles}
-            localFiles[this.state.currentFile.id] = this.state.currentFile
-            this.setState({localFiles})
-
-
-            if (this.state.localFiles[selected.id]) {
-                this.setState({ currentFile: this.state.localFiles[selected.id]})
-            } else {
+            if (!this.state.localFileData[selected.id]) {
                 const url = api + '/' + this.props.match.params.site + '/files/' + selected.id
                 const headers = {
                     method: 'GET',
@@ -214,17 +203,15 @@ class Site extends React.Component {
                     const body = await fetchResult.json()
                     console.log('body', body)
 
-                    const currentFile = {
+                    const file = {
                         id: selected.id,
                         name: body.name,
                         contents: body.contents
                     }
-                    const currentFolderId = body.parent
-                    this.setState({ currentFile, currentFolderId })
+                    this.setState({ localFileData: {...this.state.localFileData, [selected.id]: file}})
                 }
             }
-        } else {
-            this.setState({ currentFolderId: selected.id })
+            this.setState({ selected: selected.id })
         }
     }
 
@@ -239,17 +226,19 @@ class Site extends React.Component {
                         <button>new folder</button>
                         <button onClick={this.onClickDelete}>delete</button>
                     </div>
+
                     <Brancher data={this.state.brancherData}
                         setData={this.brancherSetData}
                         onSelect={this.select} />
+
                     <div className="debug-info">
                         {this.state.debug}
                     </div>
                 </div>
                 <div>
-                <input type="text" value={this.state.currentFile.name}
+                <input type="text" value={this.state.localFileData[this.state.selected].name}
                     onChange={this.updateCurrentFile('name')}/>
-                <textarea value={this.state.currentFile.contents}
+                <textarea value={this.state.localFileData[this.state.selected].contents}
                     onChange={this.updateCurrentFile('contents')}/>
                 </div>
 

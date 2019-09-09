@@ -7,6 +7,10 @@ const port = 3000
 
 const pool = require('./db.js')
 
+const dbConnection = require('./dbConnection')
+const Dao = require('./Dao')
+const dao = new Dao()
+
 app.use(cors())
 app.use(express.json())
 app.use(express.static('front/dist'))
@@ -27,66 +31,47 @@ const error = (e, res) => {
     return res.status(500).send(e)
 }
 
-app.get('/api', (req, res) => {
-    pool.query('SELECT name FROM bdr_sites', (err, results) => {
-        if (err) return error(err, res)
-        res.send(results.map(result => result.name))
-    })
+app.get('/api', async (req, res) => {
+    const results = await dao.getAllSites()
+    res.send(results.map(result => result.name))
 })
 
-app.get('/api/:site', (req, res) => {
-    pool.query('SELECT name FROM bdr_sites WHERE name = ?', req.params.site, (err, results) => {
-        if (err) return error(err, res)
-        res.send(results.length > 0)
-    })
+app.get('/api/:site', async (req, res) => {
+    const results = await dao.siteExists(req.params.site)
+    res.send(results)
 })
 
-app.post('/api/:site/create', (req, res) => {
-    const saltRounds = 10
-    const password = req.body.password
-    bcrypt.hash(password, saltRounds, (error, hash) => {
-        if (error) {
-            console.error(error)
-            res.status(500).send(error)
-            return
-        }
-        const site = { name: req.params.site, pwd_hash: hash }
-        console.log('site', site)
-        pool.query('INSERT INTO bdr_sites SET ?', site, (error, result) => {
-            if (error) {
-                console.error(error)
-                res.status(500).send(error)
-                return
-            }
-            res.send(result)
-        })
-    })
+app.post('/api/:site', async (req, res) => {
+    const pwdHash = await bcrypt.hash(req.body.password, 10)
+    const results = await dao.createSite(req.params.site, pwdHash)
+    res.send(results)
 })
 
-app.post('/api/:site/login', (req, res) => {
-    pool.query('SELECT pwd_hash FROM bdr_sites WHERE name = ?', req.params.site, (error, result) => {
-        if (error) {
-            console.error(error)
-            res.status(500).send(error)
-            return
+app.delete('/api/:site', async (req, res) => {
+    await dao.deleteSite(req.params.site)
+    res.status(201).send()
+})
+
+app.post('/api/:site/login', async (req, res) => {
+    const pwdHash = await dao.getPwdHash(req.params.site)
+    if (!pwdHash) {
+        return res.status(400).send('site /' + req.params.site + ' not found')
+    }
+    try {
+        console.log(req.body.password, pwdHash)
+        const pwdCorrect = await bcrypt.compare(req.body.password, pwdHash)
+        console.log('pwdCorrect', pwdCorrect)
+        if (pwdCorrect) {
+            const token = jwt.sign({ site: req.params.site }, process.env.SECRET)
+            res.send({token})
+        } else {
+            res.status(401).send('password incorrect')
         }
-        if (result.length === 0) {
-            return res.send('site not found')
-        }
-        bcrypt.compare(req.body.password, result[0].pwd_hash, (error, result) => {
-            if (error) {
-                console.error(error)
-                res.status(500).send(error)
-                return
-            }
-            if (result === true) {
-                const token = jwt.sign({ site: req.params.site }, process.env.SECRET)
-                res.send({token})
-            } else {
-                res.status(401).send('password incorrect')
-            }
-        })
-    })
+    } catch (e) {
+        console.log(e)
+        res.status(500).send(e.message)
+    }
+
 })
 
 app.get('/api/:site/files', authenticate, (req, res) => {
@@ -95,6 +80,62 @@ app.get('/api/:site/files', authenticate, (req, res) => {
         res.send(results)
     })
 })
+
+// app.put('/api/:site/files', authenticate, async (req, res) => {
+//     const files = req.body
+//     console.log('foo')
+//     let connection = await dbConnection()
+//     try {
+//         await connection.query('START TRANSACTION')
+//         files.forEach(file => {
+//             if (!file.id) {
+//                 // new file
+//
+//                 const query = 'INSERT INTO bdr_files (name, isFolder, contents, parent, fk_site) VALUES (?,?,?,?,?)'
+//                 const params = [
+//                     file.name,
+//                     file.isFolder,
+//                     file.contents,
+//                     file.parent,
+//                     req.params.site
+//                 ]
+//                 const insert = await connection.query(query, params)
+//             } else {
+//                 // existing file
+//                 let query = 'UPDATE bdr_files SET'
+//                 let params = []
+//                 if (file.name) {
+//                     query += ' name = ?'
+//                     params = params.concat(file.name)
+//                 }
+//                 if (file.contents) {
+//                     if (query.charAt(query.length - 1) === '?') {
+//                         query += ','
+//                     }
+//                     query += ' contents = ?'
+//                     params = params.concat(file.contents)
+//                 }
+//                 if (file.parent) {
+//                     if (query.charAt(query.length - 1) === '?') {
+//                         query += ','
+//                     }
+//                     query += ' parent = ?'
+//                     params = params.concat(file.parent)
+//                 }
+//                 const update = await connection.query(query, params)
+//             }
+//         })
+//         await connection.query('COMMIT')
+//     } catch (e) {
+//         await connection.query('ROLLBACK')
+//         console.log(e)
+//         throw e
+//     } finally {
+//         connection.release()
+//         connection.destroy()
+//     }
+//     res.send('ok')
+// })
 
 app.get('/api/:site/files/:id', authenticate, (req, res) => {
     pool.query('SELECT name, contents, isFolder, parent FROM bdr_files WHERE id = ?', req.params.id, (err, results) => {
