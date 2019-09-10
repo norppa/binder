@@ -15,12 +15,12 @@ class Site extends React.Component {
         modal: false,
         incorrectPasswordMessage: false,
         passwordValue: '',
-        brancherData:  [],
-        localFileData: { null: {id: -1, name: '', contents: ''} },
-        selected: null
+        data: undefined,
+        selected: [0]
     }
 
     async componentDidMount() {
+        console.log('cdm', this.state)
         const site = this.props.match.params.site
         const siteExists = await this.siteExists(site)
         const token = window.sessionStorage.getItem
@@ -29,6 +29,7 @@ class Site extends React.Component {
         } else if (siteExists) {
             const token = window.sessionStorage.getItem(`${site}_token`)
             if (token) {
+                console.log('token found', this.state.selected)
                 this.setState({ auth: token }, this.getFiles)
             } else {
                 this.setState({ modal: 'login' })
@@ -36,6 +37,7 @@ class Site extends React.Component {
         } else {
             this.setState({ modal: 'create' })
         }
+        console.log('cdm done', this.state.selected)
 
     }
 
@@ -65,35 +67,27 @@ class Site extends React.Component {
     }
 
     getFiles = async () => {
+        console.log('getFiles')
         const url = api + '/' + this.props.match.params.site + '/files'
         const headers = { headers: { Authorization: 'bearer ' + this.state.auth }}
 
         let fileList = await fetch(url, headers).then(response => response.json())
-
-        const toTreeNode = (listItem) => {
-            const treeNode = {
-                id: listItem.id,
-                name: listItem.name
-            }
-            if (listItem.isFolder) {
-                treeNode.children = true
-            }
-            return treeNode
-        }
+        console.log('fileList', fileList)
 
         const getChildrenOf = (parentId) => {
-            const children = fileList.filter(x => x.parent === parentId).map(toTreeNode)
+            const children = fileList.filter(x => x.parent === parentId)
             fileList = fileList.filter(x => x.parent !== parentId)
             children.forEach(node => {
-                if (node.children) {
+                if (node.isFolder) {
                     node.children = getChildrenOf(node.id)
                 }
             })
             return children
         }
 
-        const tree = getChildrenOf(null)
-        this.setState({ brancherData: tree })
+        const data = getChildrenOf(null)
+
+        this.setState({ data, selected: undefined })
 
     }
 
@@ -138,43 +132,62 @@ class Site extends React.Component {
         console.log('onClickNewFile')
     }
 
-    updateCurrentFile = (name) => (event) => {
-        const currentFile = this.state.localFileData[this.state.selected]
-        currentFile[name] = event.target.value
-        currentFile.modified = true
-        this.setState({ localFileData: {...this.state.localFileData, [this.state.selected]: currentFile }})
+    createFile = async (event) => {
+
     }
 
-    brancherSetData = (brancherData) => this.setState({ brancherData })
+    updateCurrentFile = (name) => (event) => {
+        const data = [...this.state.data]
+        const selectedFile = this.getFromData(this.state.selected, data)
+        selectedFile[name] = event.target.value
+        selectedFile.modified = true
+        this.setState({ data })
+    }
+
+    brancherSetData = (data) => this.setState({ data })
 
     select = async ({ selected }) => {
-        if (!selected.children) {
-            if (!this.state.localFileData[selected.id]) {
-                const url = api + '/' + this.props.match.params.site + '/files/' + selected.id
-                const headers = {
-                    method: 'GET',
-                    headers: { Authorization: 'bearer ' + this.state.auth }
-                }
-                const fetchResult = await fetch(url, headers)
-                if (fetchResult.status === 200) {
-                    const body = await fetchResult.json()
+        if (selected.isFolder) return
 
-                    const file = {
-                        id: selected.id,
-                        name: body.name,
-                        contents: body.contents,
-                        modified: false
-                    }
-                    this.setState({ localFileData: {...this.state.localFileData, [selected.id]: file}})
-                }
+        const path = this.findPath(selected.id)
+        console.log('select', selected, path)
+
+        if (!selected.contents) {
+            const url = api + '/' + this.props.match.params.site + '/files/' + selected.id
+            const headers = {
+                method: 'GET',
+                headers: { Authorization: 'bearer ' + this.state.auth }
             }
-            this.setState({ selected: selected.id })
+            const fetchResult = await fetch(url, headers)
+            if (fetchResult.status === 200) {
+                const body = await fetchResult.json()
+                const data = [ ...this.state.data ]
+                // console.log('safölkkas', path, data)
+                const file = this.getFromData(path, data)
+                // console.log('file', file)
+                file.contents = body.contents
+                // console.log('data', data)
+                this.setState({ data })
+            }
         }
+        this.setState({ selected: path })
     }
 
     saveChanges = async () => {
-        const changes = Object.values(this.state.localFileData).filter(x => x.modified)
-        if (changes.length === 0) return undefined
+        const flattenData = (data) => {
+            let result = []
+            for (let i = 0; i < data.length; i++) {
+                result = result.concat(data[i])
+                if (data[i].isFolder) {
+                    result = result.concat(flattenData(data[i].children))
+                }
+            }
+            return result
+        }
+
+        const modifiedData = flattenData(this.state.data).filter(x => x.modified)
+        console.log('flatData', modifiedData)
+        if (modifiedData.length === 0) return
 
         const url = api + '/' + this.props.match.params.site
         const data = {
@@ -183,7 +196,7 @@ class Site extends React.Component {
                 'Authorization': 'bearer ' + this.state.auth,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(changes),
+            body: JSON.stringify(modifiedData),
 
         }
         const fetchResult = await fetch(url,data)
@@ -196,8 +209,40 @@ class Site extends React.Component {
         }
     }
 
+    findPath = (id) => {
+        const recursion = (folder, id) => {
+            for (let i = 0; i < folder.length; i++) {
+                if (folder[i].id === id) {
+                    return [i]
+                }
+                if (folder[i].isFolder) {
+                    const searchResult = recursion(folder[i].children, id)
+                    if (searchResult) {
+                        return searchResult.concat(i)
+                    }
+                }
+            }
+            return undefined
+        }
+        return recursion(this.state.data, id)
+    }
+
+    getFromData = (path, data) => {
+        if (path === undefined) return { name: '', contents: '', disabled: true }
+
+        let result = { children: data }
+        for (let i = path.length - 1; i >= 0; i--) {
+            result = result.children[path[i]]
+        }
+        return result
+    }
+
+
+
     render () {
+        if (this.state.data === undefined) return <div />
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
+        const selectedFile = this.getFromData(this.state.selected, this.state.data)
         return (
             <div className="Site">
                 <div className="navi">
@@ -205,7 +250,7 @@ class Site extends React.Component {
                         <button onClick={this.saveChanges}>save</button>
                     </div>
 
-                    <Brancher data={this.state.brancherData}
+                    <Brancher data={this.state.data}
                         setData={this.brancherSetData}
                         onSelect={this.select} />
 
@@ -214,10 +259,12 @@ class Site extends React.Component {
                     </div>
                 </div>
                 <div>
-                <input type="text" value={this.state.localFileData[this.state.selected].name}
-                    onChange={this.updateCurrentFile('name')}/>
-                <textarea value={this.state.localFileData[this.state.selected].contents}
-                    onChange={this.updateCurrentFile('contents')}/>
+                <input type="text" value={selectedFile.name}
+                    onChange={this.updateCurrentFile('name')}
+                    disabled={selectedFile.disabled} />
+                <textarea value={selectedFile.contents}
+                    onChange={this.updateCurrentFile('contents')}
+                    disabled={selectedFile.disabled} />
                 </div>
 
                 <this.Modals />
