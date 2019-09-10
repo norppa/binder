@@ -53,8 +53,8 @@ class Brancher extends React.Component {
             return result
         }
 
-        const tree = [...this.props.data]
-        const result = selectRecursion({ id: null, name: 'root', children: tree })
+        const tree = {...this.props.data}
+        const result = selectRecursion(tree)
 
         this.props.setData(tree)
         this.props.onSelect(result)
@@ -63,7 +63,7 @@ class Brancher extends React.Component {
     render () {
         return (
             <div className="Brancher">
-                {this.props.data.map(x => <Node key={x.id} file={x} select={this.select}/>)}
+                <Node file={this.props.data} select={this.select} />
             </div>
         )
     }

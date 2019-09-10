@@ -3,6 +3,7 @@ import Modal from 'react-modal'
 import axios from 'axios'
 import './Site.css'
 
+import tree from '../tools/tree'
 import Brancher from './Brancher'
 
 const api = 'http://localhost:3000/api'
@@ -16,7 +17,7 @@ class Site extends React.Component {
         incorrectPasswordMessage: false,
         passwordValue: '',
         data: undefined,
-        selected: [0]
+        openFilePath: [0]
     }
 
     async componentDidMount() {
@@ -29,7 +30,7 @@ class Site extends React.Component {
         } else if (siteExists) {
             const token = window.sessionStorage.getItem(`${site}_token`)
             if (token) {
-                console.log('token found', this.state.selected)
+                console.log('token found', this.state.openFilePath)
                 this.setState({ auth: token }, this.getFiles)
             } else {
                 this.setState({ modal: 'login' })
@@ -37,7 +38,7 @@ class Site extends React.Component {
         } else {
             this.setState({ modal: 'create' })
         }
-        console.log('cdm done', this.state.selected)
+        console.log('cdm done', this.state.openFilePath)
 
     }
 
@@ -72,6 +73,7 @@ class Site extends React.Component {
         const headers = { headers: { Authorization: 'bearer ' + this.state.auth }}
 
         let fileList = await fetch(url, headers).then(response => response.json())
+        fileList = fileList.map(file => ({...file, parent: file.parent || 0 }))
         console.log('fileList', fileList)
 
         const getChildrenOf = (parentId) => {
@@ -85,15 +87,95 @@ class Site extends React.Component {
             return children
         }
 
-        const data = getChildrenOf(null)
+        const data = { id: 0, name: 'root', isFolder: true, children: getChildrenOf(0) }
 
-        this.setState({ data, selected: undefined })
+        this.setState({ data, openFilePath: undefined })
 
     }
 
     siteExists = (site) => axios.get(`${api}/${site}`)
             .then(response => response.data)
             .catch(error => console.error(error))
+
+    // createFile = async (event) => {
+    //     console.log('data', this.state.data)
+    //     const data = [ ... this.state.data ]
+    //     const selected = this.findSelected(data)
+    //     const parent = selected.isFolder ? selected : this.find(selected.parent, data)
+    //     console.log('parent', parent)
+    //     const newFile = {
+    //         name: '',
+    //         contents: '',
+    //         parent: parent.id
+    //     }
+    //
+    //     parent.children = parent.children.concat(newFile)
+    //
+    // }
+
+    updateCurrentFile = (name) => (event) => {
+        const data = { ...this.state.data }
+        const openFile = tree.get(this.state.openFilePath, data)
+        openFile[name] = event.target.value
+        openFile.modified = true
+        this.setState({ data })
+    }
+
+    brancherSetData = (data) => this.setState({ data })
+
+    select = async ({ selected }) => {
+        console.log('select', selected)
+        if (selected.isFolder) return
+        const path = tree.findPath(selected.id, this.state.data)
+        console.log('path', path)
+
+        if (!selected.contents) {
+            const url = api + '/' + this.props.match.params.site + '/files/' + selected.id
+            const headers = {
+                method: 'GET',
+                headers: { Authorization: 'bearer ' + this.state.auth }
+            }
+            const fetchResult = await fetch(url, headers)
+            if (fetchResult.status === 200) {
+                const body = await fetchResult.json()
+                const data = { ...this.state.data }
+                const file = tree.get(path, data)
+                file.contents = body.contents
+                this.setState({ data })
+            }
+        }
+        this.setState({ openFilePath: path })
+    }
+
+    saveChanges = async () => {
+
+
+        console.log(this.state.data)
+        const modifiedData = tree.flatten(this.state.data).filter(x => x.modified)
+        console.log('modifiedData', modifiedData)
+        if (modifiedData.length === 0) return
+
+        const url = api + '/' + this.props.match.params.site
+        const data = {
+            method: 'PUT',
+            headers: {
+                'Authorization': 'bearer ' + this.state.auth,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(modifiedData),
+
+        }
+        const fetchResult = await fetch(url,data)
+        if (fetchResult.status === 201) {
+            const localFileData = { ...this.state.localFileData }
+            Object.keys(localFileData).forEach(key => localFileData[key].modified = false)
+            this.setState({ localFileData })
+        } else {
+            console.log('failure', fetchResult.status)
+        }
+    }
+
+
 
     Modals = () => (
         <div className="Modals">
@@ -123,131 +205,16 @@ class Site extends React.Component {
         </div>
     )
 
-    onClickDelete = async (event) => {
-        console.log('onClickDelete')
-
-    }
-
-    onClickNewFile = async (event) => {
-        console.log('onClickNewFile')
-    }
-
-    createFile = async (event) => {
-
-    }
-
-    updateCurrentFile = (name) => (event) => {
-        const data = [...this.state.data]
-        const selectedFile = this.getFromData(this.state.selected, data)
-        selectedFile[name] = event.target.value
-        selectedFile.modified = true
-        this.setState({ data })
-    }
-
-    brancherSetData = (data) => this.setState({ data })
-
-    select = async ({ selected }) => {
-        if (selected.isFolder) return
-
-        const path = this.findPath(selected.id)
-        console.log('select', selected, path)
-
-        if (!selected.contents) {
-            const url = api + '/' + this.props.match.params.site + '/files/' + selected.id
-            const headers = {
-                method: 'GET',
-                headers: { Authorization: 'bearer ' + this.state.auth }
-            }
-            const fetchResult = await fetch(url, headers)
-            if (fetchResult.status === 200) {
-                const body = await fetchResult.json()
-                const data = [ ...this.state.data ]
-                // console.log('safölkkas', path, data)
-                const file = this.getFromData(path, data)
-                // console.log('file', file)
-                file.contents = body.contents
-                // console.log('data', data)
-                this.setState({ data })
-            }
-        }
-        this.setState({ selected: path })
-    }
-
-    saveChanges = async () => {
-        const flattenData = (data) => {
-            let result = []
-            for (let i = 0; i < data.length; i++) {
-                result = result.concat(data[i])
-                if (data[i].isFolder) {
-                    result = result.concat(flattenData(data[i].children))
-                }
-            }
-            return result
-        }
-
-        const modifiedData = flattenData(this.state.data).filter(x => x.modified)
-        console.log('flatData', modifiedData)
-        if (modifiedData.length === 0) return
-
-        const url = api + '/' + this.props.match.params.site
-        const data = {
-            method: 'PUT',
-            headers: {
-                'Authorization': 'bearer ' + this.state.auth,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(modifiedData),
-
-        }
-        const fetchResult = await fetch(url,data)
-        if (fetchResult.status === 201) {
-            const localFileData = { ...this.state.localFileData }
-            Object.keys(localFileData).forEach(key => localFileData[key].modified = false)
-            this.setState({ localFileData })
-        } else {
-            console.log('failure', fetchResult.status)
-        }
-    }
-
-    findPath = (id) => {
-        const recursion = (folder, id) => {
-            for (let i = 0; i < folder.length; i++) {
-                if (folder[i].id === id) {
-                    return [i]
-                }
-                if (folder[i].isFolder) {
-                    const searchResult = recursion(folder[i].children, id)
-                    if (searchResult) {
-                        return searchResult.concat(i)
-                    }
-                }
-            }
-            return undefined
-        }
-        return recursion(this.state.data, id)
-    }
-
-    getFromData = (path, data) => {
-        if (path === undefined) return { name: '', contents: '', disabled: true }
-
-        let result = { children: data }
-        for (let i = path.length - 1; i >= 0; i--) {
-            result = result.children[path[i]]
-        }
-        return result
-    }
-
-
-
     render () {
         if (this.state.data === undefined) return <div />
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
-        const selectedFile = this.getFromData(this.state.selected, this.state.data)
+        const openFile = tree.get(this.state.openFilePath, this.state.data)
         return (
             <div className="Site">
                 <div className="navi">
                     <div className="navi-btns">
                         <button onClick={this.saveChanges}>save</button>
+                        <button onClick={this.createFile}>new file</button>
                     </div>
 
                     <Brancher data={this.state.data}
@@ -259,12 +226,12 @@ class Site extends React.Component {
                     </div>
                 </div>
                 <div>
-                <input type="text" value={selectedFile.name}
+                <input type="text" value={openFile.name}
                     onChange={this.updateCurrentFile('name')}
-                    disabled={selectedFile.disabled} />
-                <textarea value={selectedFile.contents}
+                    disabled={openFile.disabled} />
+                <textarea value={openFile.contents}
                     onChange={this.updateCurrentFile('contents')}
-                    disabled={selectedFile.disabled} />
+                    disabled={openFile.disabled} />
                 </div>
 
                 <this.Modals />
