@@ -73,6 +73,7 @@ app.delete('/api/:site', async (req, res) => {
 })
 
 app.put('/api/:site', async (req, res) => {
+    console.log('body', req.body)
     try {
         const result = await dao.updateSite(req.body, req.params.site)
         res.status(201).send()

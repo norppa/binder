@@ -7,9 +7,6 @@ import Brancher from './Brancher'
 
 const api = 'http://localhost:3000/api'
 
-const Empty = () => null
-const Create = () => <div>create</div>
-const Authorized = () => <div>authorized</div>
 Modal.setAppElement('#app')
 
 class Site extends React.Component {
@@ -96,7 +93,6 @@ class Site extends React.Component {
         }
 
         const tree = getChildrenOf(null)
-        console.log('tree', tree)
         this.setState({ brancherData: tree })
 
     }
@@ -134,56 +130,18 @@ class Site extends React.Component {
     )
 
     onClickDelete = async (event) => {
-        const url = api + '/' + this.props.match.params.site + '/files/' + this.state.currentFile.id
-        const headers = {
-            method: 'DELETE',
-            headers: { Authorization: 'bearer ' + this.state.auth }
-        }
-
-        const fetchResult = await fetch(url, headers)
-        if (fetchResult.status === 204) {
-            const treeviewApi = this.treeview.current.api
-            treeviewApi.removeItem(this.state.currentFile.id)
-        }
+        console.log('onClickDelete')
 
     }
 
     onClickNewFile = async (event) => {
-        console.log('onClickNewFile', this.state.currentFolderId)
-        const newFileName = 'new file'
-        // const url = api + '/' + this.props.match.params.site + '/files'
-        // const headers = {
-        //     method: 'POST',
-        //     body: JSON.stringify({
-        //         name: newFileName,
-        //         contents: '',
-        //         isFolder: false,
-        //         parent: this.state.currentFolderId
-        //     }),
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         Authorization: 'bearer ' + this.state.auth
-        //     }
-        // }
-        // const fetchResult = await fetch(url, headers)
-        // if (fetchResult.status === 200) {
-            // const body = await fetchResult.json()
-            const newNode = {
-                id: 'new',
-                name: newFileName,
-                selected: true
-            }
-
-            const brancherData = this.state.brancherData.concat(newNode)
-            this.setState({brancherData})
-
-
-        // }
+        console.log('onClickNewFile')
     }
 
     updateCurrentFile = (name) => (event) => {
         const currentFile = this.state.localFileData[this.state.selected]
         currentFile[name] = event.target.value
+        currentFile.modified = true
         this.setState({ localFileData: {...this.state.localFileData, [this.state.selected]: currentFile }})
     }
 
@@ -198,15 +156,14 @@ class Site extends React.Component {
                     headers: { Authorization: 'bearer ' + this.state.auth }
                 }
                 const fetchResult = await fetch(url, headers)
-                console.log('fetchResult', url, headers, fetchResult)
                 if (fetchResult.status === 200) {
                     const body = await fetchResult.json()
-                    console.log('body', body)
 
                     const file = {
                         id: selected.id,
                         name: body.name,
-                        contents: body.contents
+                        contents: body.contents,
+                        modified: false
                     }
                     this.setState({ localFileData: {...this.state.localFileData, [selected.id]: file}})
                 }
@@ -215,16 +172,37 @@ class Site extends React.Component {
         }
     }
 
+    saveChanges = async () => {
+        const changes = Object.values(this.state.localFileData).filter(x => x.modified)
+        if (changes.length === 0) return undefined
+
+        const url = api + '/' + this.props.match.params.site
+        const data = {
+            method: 'PUT',
+            headers: {
+                'Authorization': 'bearer ' + this.state.auth,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(changes),
+
+        }
+        const fetchResult = await fetch(url,data)
+        if (fetchResult.status === 201) {
+            const localFileData = { ...this.state.localFileData }
+            Object.keys(localFileData).forEach(key => localFileData[key].modified = false)
+            this.setState({ localFileData })
+        } else {
+            console.log('failure', fetchResult.status)
+        }
+    }
+
     render () {
-        console.log('rendering Site', this.state.localFiles)
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
         return (
             <div className="Site">
                 <div className="navi">
                     <div className="navi-btns">
-                        <button onClick={this.onClickNewFile}>new file</button>
-                        <button>new folder</button>
-                        <button onClick={this.onClickDelete}>delete</button>
+                        <button onClick={this.saveChanges}>save</button>
                     </div>
 
                     <Brancher data={this.state.brancherData}
