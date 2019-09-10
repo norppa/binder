@@ -1,5 +1,51 @@
 const dbConnection = require('./dbConnection')
 
+const createQuery = ({ id, name, parent, contents, isFolder, remove }, site) => {
+
+    if (remove) {
+        if (!id) {
+            throw new Error('missing id from a delete command')
+        }
+        return { query: 'DELETE FROM bdr_files WHERE id = ?', params: [id] }
+    }
+
+    if (id) {
+        //update existing
+        if (!name && !contents && !parent) {
+            throw new Error('missing name/contents/parent from an update command')
+        }
+
+        let queryStr = 'UPDATE bdr_files SET'
+        let params = []
+
+        if (name) {
+            queryStr += ' name = ?'
+            params = params.concat(name)
+        }
+        if (contents) {
+            queryStr += name ? ', contents = ?' : ' contents = ?'
+            params = params.concat(contents)
+        }
+        if (parent) {
+            queryStr += (name || contents) ? ', parent = ?' : ' parent = ?'
+            params = params.concat(parent)
+        }
+        queryStr += ' WHERE id = ?'
+        params = params.concat(id)
+
+        return { query: queryStr, params: params }
+
+    } else {
+        // create new
+        if (!name) {
+            throw new Error('missing name from a create command')
+        }
+        const queryStr = 'INSERT INTO bdr_files (name, contents, parent, isFolder, fk_site) VALUES (?, ?, ?, ?, ?)'
+        const params = [name, contents || '', parent || null, !!isFolder, site]
+        return { query: queryStr, params: params }
+    }
+}
+
 module.exports = class Dao {
     async getAllSites() {
         const connection = await dbConnection()
@@ -10,6 +56,7 @@ module.exports = class Dao {
             await connection.query('COMMIT')
             return results
         } catch (e) {
+            connection.query('ROLLBACK')
             console.error(e)
             throw e
         } finally {
@@ -28,6 +75,7 @@ module.exports = class Dao {
             await connection.query('COMMIT')
             return results.length > 0
         } catch (e) {
+            connection.query('ROLLBACK')
             console.error(e)
             throw e
         } finally {
@@ -48,6 +96,26 @@ module.exports = class Dao {
 
             return results
         } catch (e) {
+            connection.query('ROLLBACK')
+            console.error(e)
+            throw e
+        } finally {
+            await connection.release()
+            await connection.destroy()
+        }
+    }
+
+    async updateSite(fileList, site) {
+        const connection = await dbConnection()
+        try {
+            await connection.query('START TRANSACTION')
+            for (let i = 0; i < fileList.length; i++) {
+                const { query, params } = createQuery(fileList[i], site)
+                await connection.query(query, params)
+            }
+            await connection.query('COMMIT')
+        } catch (e) {
+            connection.query('ROLLBACK')
             console.error(e)
             throw e
         } finally {
@@ -68,6 +136,7 @@ module.exports = class Dao {
             await connection.query(query2, params)
             await connection.query('COMMIT')
         } catch (e) {
+            connection.query('ROLLBACK')
             console.error(e)
             throw e
         } finally {
@@ -86,6 +155,7 @@ module.exports = class Dao {
             await connection.query('COMMIT')
             return results[0].pwdHash
         } catch (e) {
+            connection.query('ROLLBACK')
             console.error(e)
             throw e
         } finally {
@@ -103,6 +173,7 @@ module.exports = class Dao {
             await connection.query('COMMIT')
             return results
         } catch (e) {
+            connection.query('ROLLBACK')
             console.error(e)
             throw e
         } finally {
@@ -120,6 +191,7 @@ module.exports = class Dao {
             await connection.query('COMMIT')
             return results[0]
         } catch (e) {
+            connection.query('ROLLBACK')
             console.error(e)
             throw e
         } finally {
@@ -128,6 +200,7 @@ module.exports = class Dao {
         }
     }
 
+    //unnecessary!!
     async deleteFile(fileId) {
         const connection = await dbConnection()
         try {
@@ -136,6 +209,7 @@ module.exports = class Dao {
             await connection.query(queryStr, fileId)
             await connection.query('COMMIT')
         } catch (e) {
+            connection.query('ROLLBACK')
             console.error(e)
             throw e
         } finally {

@@ -31,6 +31,26 @@ const error = (e, res) => {
     return res.status(500).send(e)
 }
 
+app.post('/api/:site/login', async (req, res) => {
+    const pwdHash = await dao.getPwdHash(req.params.site)
+    if (!pwdHash) {
+        return res.status(400).send('site /' + req.params.site + ' not found')
+    }
+    try {
+        const pwdCorrect = await bcrypt.compare(req.body.password, pwdHash)
+        if (pwdCorrect) {
+            const token = jwt.sign({ site: req.params.site }, process.env.SECRET)
+            res.send({token})
+        } else {
+            res.status(401).send('password incorrect')
+        }
+    } catch (e) {
+        console.log(e)
+        res.status(500).send(e.message)
+    }
+
+})
+
 app.get('/api', async (req, res) => {
     const results = await dao.getAllSites()
     res.send(results.map(result => result.name))
@@ -52,26 +72,13 @@ app.delete('/api/:site', async (req, res) => {
     res.status(201).send()
 })
 
-app.post('/api/:site/login', async (req, res) => {
-    const pwdHash = await dao.getPwdHash(req.params.site)
-    if (!pwdHash) {
-        return res.status(400).send('site /' + req.params.site + ' not found')
-    }
+app.put('/api/:site', async (req, res) => {
     try {
-        console.log(req.body.password, pwdHash)
-        const pwdCorrect = await bcrypt.compare(req.body.password, pwdHash)
-        console.log('pwdCorrect', pwdCorrect)
-        if (pwdCorrect) {
-            const token = jwt.sign({ site: req.params.site }, process.env.SECRET)
-            res.send({token})
-        } else {
-            res.status(401).send('password incorrect')
-        }
+        const result = await dao.updateSite(req.body, req.params.site)
+        res.status(201).send()
     } catch (e) {
-        console.log(e)
-        res.status(500).send(e.message)
+        res.status(400).send(e.message)
     }
-
 })
 
 app.get('/api/:site/files', authenticate, async (req, res) => {
@@ -87,6 +94,7 @@ app.get('/api/:site/files/:id', authenticate, async (req, res) => {
     res.send(results)
 })
 
+// deprecated
 app.delete('/api/:site/files/:id', authenticate, async (req, res) => {
     await dao.deleteFile(req.params.id)
     return res.status(201).send()
