@@ -10,12 +10,10 @@ const findPath = (id, node) => {
 }
 
 const findSelected = (node) => {
-    for (let i = 0; i < node.length; i++) {
-        if (node[i].selected) {
-            return node[i]
-        }
-        if (node[i].isFolder) {
-            const selected = this.findSelected(node[i].children)
+    if (node.selected) return node
+    if (node.isFolder) {
+        for (let i = 0; i < node.children.length; i++) {
+            const selected = findSelected(node.children[i])
             if (selected) return selected
         }
     }

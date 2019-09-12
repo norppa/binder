@@ -3,19 +3,21 @@ import './Brancher.css'
 import { FaFileAlt, FaFolder, FaFolderOpen } from 'react-icons/fa'
 import { TiFolder, TiFolderOpen, TiDocumentText } from 'react-icons/ti'
 
-const Node = ({file, select}) => {
-    const { id, name, children, expanded, selected } = file
-    const Icon = (children ? (expanded ? TiFolderOpen : TiFolder) : TiDocumentText)
-    const classNames = 'name' + (selected ? ' selected' : '')
+const Node = ({data, id, select}) => {
+    const file = data.find(file => file.id === id)
+    const children = data.filter(file => file.parent === id)
+
+    const Icon = (file.isFolder ? (file.expanded ? TiFolderOpen : TiFolder) : TiDocumentText)
+    const classNames = 'name' + (file.selected ? ' selected' : '')
 
     return (
         <div className="brancher-node">
-            <div className={classNames} onClick={select(id)}>
+            <div className={classNames} onClick={select(file.id)}>
                 <Icon size={30} className="icon" /> {file.name}
             </div>
-            {file.expanded ?
+            { file.expanded ?
             <div className="brancher-node-children">
-                {file.children.map(x => <Node key={x.id} file={x} select={select}/>)}
+                {children.map(file => <Node key={file.id} data={data} id={file.id} select={select} />)}
             </div>
             : null}
         </div>
@@ -25,45 +27,27 @@ const Node = ({file, select}) => {
 class Brancher extends React.Component {
 
     select = (id) => () => {
-        const selectRecursion = (node) => {
-            let result = null
-            if (node.selected) {
-                delete node.selected
-            }
-            if (node.children) {
-                for (let i = 0; i < node.children.length; i++) {
-                    const recursionResult = selectRecursion(node.children[i])
-                    result = result || recursionResult
+        const data = this.props.data.map(file => {
+            if (file.id === id) {
+                if (file.isFolder) {
+                    return { ...file, selected: true, expanded: !file.expanded }
+                } else {
+                    return { ...file, selected: true }
                 }
+            } else {
+                return { ...file, selected: false}
             }
-            if (result && result.selected && !result.parent) {
-                result.parent = node
-            }
-            if (node.id === id) {
-                node.selected = true
-                if (node.children) {
-                    if (node.expanded) {
-                        delete node.expanded
-                    } else {
-                        node.expanded = true
-                    }
-                }
-                result = { selected: node }
-            }
-            return result
-        }
-
-        const tree = {...this.props.data}
-        const result = selectRecursion(tree)
-
-        this.props.setData(tree)
-        this.props.onSelect(result)
+        })
+        this.props.setData(data)
+        this.props.onSelect(id)
     }
 
     render () {
+        const rootFiles = this.props.data.filter(x => x.parent === null)
+
         return (
             <div className="Brancher">
-                <Node file={this.props.data} select={this.select} />
+                { rootFiles.map(file => <Node key={file.id} data={this.props.data} id={file.id} select={this.select} />) }
             </div>
         )
     }
