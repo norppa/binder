@@ -1,6 +1,5 @@
 import React from 'react'
 import Modal from 'react-modal'
-import axios from 'axios'
 import './Site.css'
 
 import tree from '../tools/tree'
@@ -72,25 +71,17 @@ class Site extends React.Component {
 
     }
 
-    siteExists = (site) => axios.get(`${api}/${site}`)
-            .then(response => response.data)
-            .catch(error => console.error(error))
+    siteExists = async () => {
+        const url = api + '/' + this.props.match.params.site
+        console.log('url', url)
+        const fetchResult = await fetch(url)
+        if (fetchResult.status !== 200) {
+            return console.error('siteExists failed', fetchResult)
+        }
+        return await fetchResult.json()
+    }
 
     createFile = async (event) => {
-        console.log('data', this.state.data)
-        const data = { ...this.state.data }
-        const selected = tree.findSelected(data)
-        console.log('selected', selected)
-        const parent = selected.isFolder ? selected : this.find(selected.parent, data)
-        console.log('parent', parent)
-        const newFile = {
-            name: 'new_file',
-            contents: '',
-            parent: parent.id
-        }
-        console.log('data2', this.state.data)
-
-        parent.children = parent.children.concat(newFile)
 
     }
 
@@ -129,35 +120,6 @@ class Site extends React.Component {
         }
     }
 
-    saveChanges = async () => {
-
-
-        const modifiedData = tree.flatten(this.state.data).filter(x => x.modified)
-        console.log('modifiedData', modifiedData)
-        if (modifiedData.length === 0) return
-
-        const url = api + '/' + this.props.match.params.site
-        const data = {
-            method: 'PUT',
-            headers: {
-                'Authorization': 'bearer ' + this.state.auth,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(modifiedData),
-
-        }
-        const fetchResult = await fetch(url,data)
-        if (fetchResult.status === 201) {
-            const localFileData = { ...this.state.localFileData }
-            Object.keys(localFileData).forEach(key => localFileData[key].modified = false)
-            this.setState({ localFileData })
-        } else {
-            console.log('failure', fetchResult.status)
-        }
-    }
-
-
-
     Modals = () => (
         <div className="Modals">
             <Modal isOpen={this.state.modal === 'login'}
@@ -194,7 +156,6 @@ class Site extends React.Component {
             <div className="Site">
                 <div className="navi">
                     <div className="navi-btns">
-                        <button onClick={this.saveChanges}>save</button>
                         <button onClick={this.createFile}>new file</button>
                     </div>
 
