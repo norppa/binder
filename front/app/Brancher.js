@@ -5,6 +5,7 @@ import { TiFolder, TiFolderOpen, TiDocumentText } from 'react-icons/ti'
 
 const Node = ({data, id, select}) => {
     const file = data.find(file => file.id === id)
+    if (file.removed) return null
     const children = data.filter(file => file.parent === id)
 
     const Icon = (file.isFolder ? (file.expanded ? TiFolderOpen : TiFolder) : TiDocumentText)

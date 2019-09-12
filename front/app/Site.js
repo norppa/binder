@@ -1,13 +1,12 @@
 import React from 'react'
 import Modal from 'react-modal'
-import './Site.css'
-
-import tree from '../tools/tree'
 import Brancher from './Brancher'
+import './Site.css'
 
 const api = 'http://localhost:3000/api'
 
 Modal.setAppElement('#app')
+
 
 class Site extends React.Component {
     state = {
@@ -35,7 +34,6 @@ class Site extends React.Component {
         } else {
             this.setState({ modal: 'create' })
         }
-
     }
 
     handlePasswordValueChange = (event) => this.setState({ passwordValue: event.target.value })
@@ -57,6 +55,7 @@ class Site extends React.Component {
                 }
             })
     }
+
     create = (event) => {
         event.preventDefault()
         console.log('create site', this.props.match.params.site )
@@ -81,8 +80,54 @@ class Site extends React.Component {
         return await fetchResult.json()
     }
 
-    createFile = async (event) => {
+    newFiles = 0
+    createFile = () => {
+        const selected = this.state.data.find(file => file.selected)
+        const parent = selected ? (selected.isFolder ? selected.id : selected.parent) : null
+        const newFile = {
+            id: this.state.data.reduce((acc, cur) => Math.max(cur.id, acc), 1) + 1,
+            name: 'new_file_' + this.newFiles++,
+            contents: '',
+            parent,
+            created: true
+        }
+        this.setState({ data: this.state.data.concat(newFile) })
+    }
 
+    removeFile = () => {
+        const selected = this.state.data.find(file => file.selected)
+        if (!selected) return
+        let remove = [selected.id]
+        let data = this.state.data
+        while (remove.length > 0) {
+            const children = data.filter(file => remove.includes(file.parent))
+            data = data.map(file => remove.includes(file.id) ? { ...file, removed: true } : file)
+            remove = children
+        }
+        this.setState({data, active: undefined})
+
+    }
+
+    saveSite = async () => {
+        console.log('saveSite')
+        const modified = this.state.data.filter(file => file.modified || file.created || file.removed)
+        console.log('modified', modified)
+        if (modified.length === 0) {
+            return
+        }
+
+        const url = api + '/' + this.props.match.params.site
+        const headers = {
+            method: 'PUT',
+            headers: {
+                'Authorization': 'bearer ' + this.state.auth,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(modified)
+        }
+        console.log(url, headers)
+        const fetchResult = await fetch(url, headers)
+        console.log(fetchResult.status)
     }
 
     updateActive = (name) => (event) => {
@@ -96,14 +141,12 @@ class Site extends React.Component {
         this.setState({ data })
     }
 
-    brancherSetData = (data) => this.setState({ data })
-
     select = async (selected) => {
         // console.log('select', selected)
         const file = this.state.data.find(file => file.id === selected)
         if (file.isFolder) return
 
-        if (!file.contents) {
+        if (file.contents === undefined) {
             const url = api + '/' + this.props.match.params.site + '/files/' + selected
             const headers = {
                 method: 'GET',
@@ -149,6 +192,7 @@ class Site extends React.Component {
     )
 
     render () {
+        console.log('render', this.state.data)
         if (this.state.data === undefined) return <this.Modals />
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
         const activeFile = this.state.data.find(file => file.id === this.state.active) || {name: '', contents: ''}
@@ -157,10 +201,12 @@ class Site extends React.Component {
                 <div className="navi">
                     <div className="navi-btns">
                         <button onClick={this.createFile}>new file</button>
+                        <button onClick={this.removeFile}>delete</button>
+                        <button onClick={this.saveSite}>save</button>
                     </div>
 
                     <Brancher data={this.state.data}
-                        setData={this.brancherSetData}
+                        setData={(data) => this.setState({ data })}
                         onSelect={this.select} />
 
                     <div className="debug-info">

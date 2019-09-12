@@ -1,16 +1,28 @@
 const dbConnection = require('./dbConnection')
 
-const createQuery = ({ id, name, parent, contents, isFolder, remove }, site) => {
+const createQuery = ({ id, name, parent, contents, isFolder, removed, created, modified }, site) => {
 
-    if (remove) {
+    if (created) {
+        console.log('create is true')
+        if (!name) {
+            throw new Error('missing name from a create command')
+        }
+        const queryStr = 'INSERT INTO bdr_files (name, contents, parent, isFolder, fk_site) VALUES (?, ?, ?, ?, ?)'
+        const params = [name, contents || '', parent || null, !!isFolder, site]
+        return { query: queryStr, params: params }
+    }
+
+    if (removed) {
         if (!id) {
             throw new Error('missing id from a delete command')
         }
         return { query: 'DELETE FROM bdr_files WHERE id = ?', params: [id] }
     }
 
-    if (id) {
-        //update existing
+    if (modified) {
+        if (!id) {
+            throw new Error('missing id from a modify command')
+        }
         if (!name && !contents && !parent) {
             throw new Error('missing name/contents/parent from an update command')
         }
@@ -35,15 +47,9 @@ const createQuery = ({ id, name, parent, contents, isFolder, remove }, site) => 
 
         return { query: queryStr, params: params }
 
-    } else {
-        // create new
-        if (!name) {
-            throw new Error('missing name from a create command')
-        }
-        const queryStr = 'INSERT INTO bdr_files (name, contents, parent, isFolder, fk_site) VALUES (?, ?, ?, ?, ?)'
-        const params = [name, contents || '', parent || null, !!isFolder, site]
-        return { query: queryStr, params: params }
     }
+
+    throw new Error('missing created/removed/modified value')
 }
 
 module.exports = class Dao {
@@ -106,6 +112,7 @@ module.exports = class Dao {
     }
 
     async updateSite(fileList, site) {
+        console.log('updateSite', fileList, site)
         const connection = await dbConnection()
         try {
             await connection.query('START TRANSACTION')
