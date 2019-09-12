@@ -80,34 +80,6 @@ class Site extends React.Component {
         return await fetchResult.json()
     }
 
-    newFiles = 0
-    createFile = () => {
-        const selected = this.state.data.find(file => file.selected)
-        const parent = selected ? (selected.isFolder ? selected.id : selected.parent) : null
-        const newFile = {
-            id: this.state.data.reduce((acc, cur) => Math.max(cur.id, acc), 1) + 1,
-            name: 'new_file_' + this.newFiles++,
-            contents: '',
-            parent,
-            created: true
-        }
-        this.setState({ data: this.state.data.concat(newFile) })
-    }
-
-    removeFile = () => {
-        const selected = this.state.data.find(file => file.selected)
-        if (!selected) return
-        let remove = [selected.id]
-        let data = this.state.data
-        while (remove.length > 0) {
-            const children = data.filter(file => remove.includes(file.parent))
-            data = data.map(file => remove.includes(file.id) ? { ...file, removed: true } : file)
-            remove = children
-        }
-        this.setState({data, active: undefined})
-
-    }
-
     saveSite = async () => {
         console.log('saveSite')
         const modified = this.state.data.filter(file => file.modified || file.created || file.removed)
@@ -128,6 +100,67 @@ class Site extends React.Component {
         console.log(url, headers)
         const fetchResult = await fetch(url, headers)
         console.log(fetchResult.status)
+    }
+
+    newFiles = 0
+    createFile = () => {
+        const selected = this.state.data.find(file => file.selected)
+        const parent = selected ? (selected.isFolder ? selected.id : selected.parent) : null
+        const newFile = {
+            id: this.state.data.reduce((acc, cur) => Math.max(cur.id, acc), 1) + 1,
+            name: 'new_file_' + this.newFiles++,
+            contents: '',
+            parent,
+            created: true,
+            selected: true,
+            active: true
+        }
+        const data = this.state.data.map(file => {
+            if (file.id === parent) return {...file, selected: false, expanded: true}
+            if (file.isFolder) return { ...file, selected: false }
+            return { ...file, selected: false, active: false}
+        }).concat(newFile)
+
+        this.setState({ data })
+    }
+
+    createFolder = () => {
+        console.log('createFolder')
+        const selected = this.state.data.find(file => file.selected)
+        console.log('selected', selected)
+        const parent = selected ? (selected.isFolder ? selected.id : selected.parent) : null
+        console.log('parent', parent)
+        const newFolder = {
+            id: this.state.data.reduce((acc, cur) => Math.max(cur.id, acc), 1) + 1,
+            name: 'new_folder_' + this.newFiles++,
+            isFolder: true,
+            parent,
+            created: true,
+            selected: true,
+            expanded: true
+        }
+        const data = this.state.data.map(file => {
+            if (file.id === parent) {
+                return { ...file, selected: false, expanded: true }
+            }
+            return { ...file, selected: false }
+        }).concat(newFolder)
+        console.log('data', data)
+        this.setState({ data })
+    }
+
+    removeFile = () => {
+        const selected = this.state.data.find(file => file.selected)
+        if (!selected) return
+        let remove = [selected.id]
+        let data = this.state.data
+        while (remove.length > 0) {
+            const children = data.filter(file => remove.includes(file.parent))
+            data = data.map(file => remove.includes(file.id) ? { ...file, removed: true } : file)
+            remove = children
+        }
+        this.setState({data, active: undefined})
+
     }
 
     updateActive = (name) => (event) => {
@@ -161,6 +194,19 @@ class Site extends React.Component {
         }
     }
 
+    deselect = (event) => {
+        if (event.target.className === 'navi' || event.target.className === 'navi-btns') {
+            const data = this.state.data.map(file => {
+                if (file.isFolder) {
+                    return { ...file, selecte: false }
+                } else {
+                    return { ...file, selected: false, active: false }
+                }
+            })
+            this.setState({ data })
+        }
+    }
+
     Modals = () => (
         <div className="Modals">
             <Modal isOpen={this.state.modal === 'login'}
@@ -190,15 +236,16 @@ class Site extends React.Component {
     )
 
     render () {
-        console.log('render', this.state.data)
+        // console.log('render', this.state.data)
         if (this.state.data === undefined) return <this.Modals />
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
         const activeFile = this.state.data.find(file => file.active) || { name: '', contents: '', disabled: true}
         return (
             <div className="Site">
-                <div className="navi">
+                <div className="navi" onClick={this.deselect}>
                     <div className="navi-btns">
                         <button onClick={this.createFile}>new file</button>
+                        <button onClick={this.createFolder}>new folder</button>
                         <button onClick={this.removeFile}>delete</button>
                         <button onClick={this.saveSite}>save</button>
                     </div>
@@ -206,10 +253,6 @@ class Site extends React.Component {
                     <Brancher data={this.state.data}
                         setData={(data) => this.setState({ data })}
                         onSelect={this.select} />
-
-                    <div className="debug-info">
-                        {this.state.debug}
-                    </div>
                 </div>
                 <div>
                 <input type="text" value={activeFile.name}
