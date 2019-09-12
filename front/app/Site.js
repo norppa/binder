@@ -132,7 +132,7 @@ class Site extends React.Component {
 
     updateActive = (name) => (event) => {
         const data = this.state.data.map(file => {
-            if (file.id === this.state.active) {
+            if (file.active) {
                 return { ...file, [name]: event.target.value, modified: true }
             } else {
                 return file
@@ -142,7 +142,7 @@ class Site extends React.Component {
     }
 
     select = async (selected) => {
-        // console.log('select', selected)
+        console.log('select', selected)
         const file = this.state.data.find(file => file.id === selected)
         if (file.isFolder) return
 
@@ -155,11 +155,9 @@ class Site extends React.Component {
             const fetchResult = await fetch(url, headers)
             if (fetchResult.status === 200) {
                 const result = await fetchResult.json()
-                const data = this.state.data.map(file => file.id === selected ? Object.assign({}, file, result) : file)
-                this.setState({ data, active: selected })
+                const data = this.state.data.map(file => file.id === selected ? Object.assign({}, file, result, { active: true }) : file)
+                this.setState({ data })
             }
-        } else {
-            this.setState({ active: selected })
         }
     }
 
@@ -195,7 +193,7 @@ class Site extends React.Component {
         console.log('render', this.state.data)
         if (this.state.data === undefined) return <this.Modals />
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
-        const activeFile = this.state.data.find(file => file.id === this.state.active) || {name: '', contents: ''}
+        const activeFile = this.state.data.find(file => file.active) || { name: '', contents: '', disabled: true}
         return (
             <div className="Site">
                 <div className="navi">
@@ -216,10 +214,10 @@ class Site extends React.Component {
                 <div>
                 <input type="text" value={activeFile.name}
                     onChange={this.updateActive('name')}
-                    disabled={!this.state.active} />
+                    disabled={activeFile.disabled} />
                 <textarea value={activeFile.contents}
                     onChange={this.updateActive('contents')}
-                    disabled={!this.state.active} />
+                    disabled={activeFile.disabled} />
                 </div>
 
                 <this.Modals />

@@ -13,7 +13,7 @@ const Node = ({data, id, select}) => {
 
     return (
         <div className="brancher-node">
-            <div className={classNames} onClick={select(file.id)}>
+            <div className={classNames} onClick={select(file.id, file.isFolder)}>
                 <Icon size={30} className="icon" /> {file.name}
             </div>
             { file.expanded ?
@@ -27,16 +27,20 @@ const Node = ({data, id, select}) => {
 
 class Brancher extends React.Component {
 
-    select = (id) => () => {
+    select = (id, isFolder) => () => {
         const data = this.props.data.map(file => {
-            if (file.id === id) {
-                if (file.isFolder) {
+            if (file.isFolder) {
+                if (file.id === id) {
                     return { ...file, selected: true, expanded: !file.expanded }
                 } else {
-                    return { ...file, selected: true }
+                    return { ...file, selected: false }
                 }
             } else {
-                return { ...file, selected: false}
+                if (file.id === id) {
+                    return { ...file, selected: true, active: isFolder ? file.active : true }
+                } else {
+                    return { ...file, selected: false, active: isFolder ? file.active : false }
+                }
             }
         })
         this.props.setData(data)
