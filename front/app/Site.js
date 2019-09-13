@@ -158,24 +158,10 @@ class Site extends React.Component {
         this.setState({ data })
     }
 
-    removeFile = () => {
-        const selected = this.state.data.find(file => file.selected)
-        if (!selected) return
-        let remove = [selected.id]
-        let data = this.state.data
-        while (remove.length > 0) {
-            const children = data.filter(file => remove.includes(file.parent))
-            data = data.map(file => remove.includes(file.id) ? { ...file, removed: true } : file)
-            remove = children
-        }
-        this.setState({data, active: undefined})
-
-    }
-
-    updateActive = (name) => (event) => {
+    updateActive = (event) => {
         const data = this.state.data.map(file => {
             if (file.active) {
-                return { ...file, [name]: event.target.value, modified: true }
+                return { ...file, contents: event.target.value, modified: true }
             } else {
                 return file
             }
@@ -255,7 +241,6 @@ class Site extends React.Component {
                     <div className="navi-btns">
                         <button onClick={this.createFile}>new file</button>
                         <button onClick={this.createFolder}>new folder</button>
-                        <button onClick={this.removeFile}>delete</button>
                         <button onClick={this.saveSite}>save</button>
                     </div>
 
@@ -264,11 +249,8 @@ class Site extends React.Component {
                         onSelect={this.select} />
                 </div>
                 <div>
-                <input type="text" value={activeFile.name}
-                    onChange={this.updateActive('name')}
-                    disabled={activeFile.disabled} />
                 <textarea value={activeFile.contents}
-                    onChange={this.updateActive('contents')}
+                    onChange={this.updateActive}
                     disabled={activeFile.disabled} />
                 </div>
 
