@@ -5,8 +5,6 @@ const jwt = require('jsonwebtoken')
 const app = express()
 const port = 3000
 
-const pool = require('./db.js')
-
 const dbConnection = require('./dbConnection')
 const Dao = require('./Dao')
 const dao = new Dao()

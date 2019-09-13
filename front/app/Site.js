@@ -14,8 +14,7 @@ class Site extends React.Component {
         modal: false,
         incorrectPasswordMessage: false,
         passwordValue: '',
-        data: undefined,
-        active: undefined
+        data: undefined
     }
 
     async componentDidMount() {
@@ -114,50 +113,6 @@ class Site extends React.Component {
         console.log(fetchResult.status)
     }
 
-    newFiles = 0
-    createFile = () => {
-        const selected = this.state.data.find(file => file.selected)
-        const parent = selected ? (selected.isFolder ? selected.id : selected.parent) : null
-        const newFile = {
-            id: this.state.data.reduce((acc, cur) => Math.max(cur.id, acc), 1) + 1,
-            name: 'new_file_' + this.newFiles++,
-            contents: '',
-            parent,
-            created: true,
-            selected: true,
-            active: true
-        }
-        const data = this.state.data.map(file => {
-            if (file.id === parent) return {...file, selected: false, expanded: true}
-            if (file.isFolder) return { ...file, selected: false }
-            return { ...file, selected: false, active: false}
-        }).concat(newFile)
-
-        this.setState({ data })
-    }
-
-    createFolder = () => {
-        const selected = this.state.data.find(file => file.selected)
-        const parent = selected ? (selected.isFolder ? selected.id : selected.parent) : null
-        const newFolder = {
-            id: this.state.data.reduce((acc, cur) => Math.max(cur.id, acc), 1) + 1,
-            name: 'new_folder_' + this.newFiles++,
-            isFolder: true,
-            parent,
-            created: true,
-            selected: true,
-            expanded: true
-        }
-        const data = this.state.data.map(file => {
-            if (file.id === parent) {
-                return { ...file, selected: false, expanded: true }
-            }
-            return { ...file, selected: false }
-        }).concat(newFolder)
-        console.log('data', data)
-        this.setState({ data })
-    }
-
     updateActive = (event) => {
         const data = this.state.data.map(file => {
             if (file.active) {
@@ -238,15 +193,10 @@ class Site extends React.Component {
         return (
             <div className="Site">
                 <div className="navi" onClick={this.deselect}>
-                    <div className="navi-btns">
-                        <button onClick={this.createFile}>new file</button>
-                        <button onClick={this.createFolder}>new folder</button>
-                        <button onClick={this.saveSite}>save</button>
-                    </div>
-
                     <Brancher data={this.state.data}
                         setData={(data) => this.setState({ data })}
-                        onSelect={this.select} />
+                        onSelect={this.select}
+                        save={this.saveSite}/>
                 </div>
                 <div>
                 <textarea value={activeFile.contents}

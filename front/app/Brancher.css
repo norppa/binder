@@ -1,3 +1,6 @@
+.Brancher {
+}
+
 .name {
     font-size: 1.5em;
 }
@@ -15,6 +18,7 @@
 }
 
 .name-left {
+    flex-grow: 99;
     cursor: pointer;
 }
 
@@ -42,4 +46,31 @@
 .action-icon:hover {
     color: red;
     cursor: pointer;
+}
+
+.brancher-actions {
+    display: flex;
+    border-bottom: 3px solid #D8E6F3;
+    padding: 10px;
+}
+
+.brancher-actions .icon {
+        cursor: pointer;
+}
+
+.brancher-action-right {
+    margin-left: auto;
+}
+
+.name-input {
+    font-family: "Times New Roman";
+    color: #D8E6F3;
+    background-color: #32394D;
+    font-size: 1.1em;
+    width: 5em;
+    margin-bottom: 3px;
+}
+
+form {
+    display: inline-block;
 }

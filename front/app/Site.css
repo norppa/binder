@@ -1,16 +1,11 @@
 .Site {
     display: grid;
     grid-template-rows: auto;
-    grid-template-columns: 300px auto;
+    grid-template-columns: 350px auto;
     grid-column-gap: 10px;
 
     background-color: #32394D;
     padding: 5px;
-}
-
-.navi-tree {
-    display: inline-block;
-    width: 300px;
 }
 
 textarea {
