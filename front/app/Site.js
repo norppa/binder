@@ -41,19 +41,31 @@ class Site extends React.Component {
     closeModal = () => this.setState({ modal: false, incorrectPasswordMessage: false })
     login = (event) => {
         event.preventDefault()
-        axios.post(`${api}/${this.props.match.params.site}/login`, { password: this.state.passwordValue })
+        const url = api + '/' + this.props.match.params.site + '/login'
+        const headers = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: this.state.passwordValue })
+        }
+        fetch(url, headers)
             .then(response => {
                 if (response.status === 200) {
-                    window.sessionStorage.setItem(this.props.match.params.site + '_token', response.data.token)
-                    this.setState({ auth: response.data.token }, this.getFiles)
-                    this.closeModal()
+                    return response.json()
                 }
-            })
-            .catch(error => {
-                if (error.response.status === 401) {
+                if (response.status === 401) {
                     this.setState({ incorrectPasswordMessage: true })
+                    throw new Error('incorrect password')
+                } else {
+                    console.error('something went wrong', response)
+                    throw new Error('something went wrong')
                 }
             })
+            .then(response => {
+                window.sessionStorage.setItem(this.props.match.params.site + '_token', response.token)
+                this.setState({ auth: response.token }, this.getFiles)
+                this.closeModal()
+            })
+            .catch(error => null)
     }
 
     create = (event) => {
@@ -125,11 +137,8 @@ class Site extends React.Component {
     }
 
     createFolder = () => {
-        console.log('createFolder')
         const selected = this.state.data.find(file => file.selected)
-        console.log('selected', selected)
         const parent = selected ? (selected.isFolder ? selected.id : selected.parent) : null
-        console.log('parent', parent)
         const newFolder = {
             id: this.state.data.reduce((acc, cur) => Math.max(cur.id, acc), 1) + 1,
             name: 'new_folder_' + this.newFiles++,
