@@ -18,6 +18,7 @@ class Site extends React.Component {
     }
 
     async componentDidMount() {
+        console.log('componentDidMount')
         const site = this.props.match.params.site
         const siteExists = await this.siteExists(site)
         const token = window.sessionStorage.getItem

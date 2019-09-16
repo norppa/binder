@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const path = require('path')
 const app = express()
 const port = 3000
 
@@ -93,10 +94,8 @@ app.get('/api/:site/files/:id', authenticate, async (req, res) => {
     res.send(results)
 })
 
-// deprecated
-app.delete('/api/:site/files/:id', authenticate, async (req, res) => {
-    await dao.deleteFile(req.params.id)
-    return res.status(201).send()
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname + '/front/dist/index.html'));
 })
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.listen(port, () => console.log(`Binder listening on port ${port}!`))

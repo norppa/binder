@@ -7,6 +7,6 @@ module.exports = merge(common, {
   output : {
       path : path.resolve(__dirname , 'dist'),
       filename: 'binder.bundle.js',
-      publicPath: '/binder/'
+      publicPath: '/'
   }
 })
