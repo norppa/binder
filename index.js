@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const bcrypt = require('bcrypt')
@@ -98,4 +99,4 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname + '/front/dist/index.html'));
 })
 
-app.listen(port, () => console.log(`Binder listening on port ${port}!`))
+app.listen(process.env.PORT, () => console.log(`Binder listening on port ${process.env.PORT}!`))
