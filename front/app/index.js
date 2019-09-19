@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { BrowserRouter, Switch, Route } from 'react-router-dom'
+import { BrowserRouter, Switch, Route, Link } from 'react-router-dom'
 
 import Site from './Site'
 
@@ -15,6 +15,6 @@ function Router() {
   );
 }
 
-const Foo = () => (<div>foo</div>)
+const Foo = () => (<div><Link to="/binder/foo">/binder/foo</Link></div>)
 
 ReactDOM.render(<Router />, document.getElementById('app'))

@@ -164,9 +164,6 @@ class Brancher extends React.Component {
                     <TiFolderAdd size={36}
                         className="icon"
                         onClick={this.controls.createFolder} />
-                    <TiUpload size={36}
-                        className="icon brancher-action-right"
-                        onClick={this.props.save} />
                 </div>
                 { rootFiles.map(file => <this.Node key={file.id} data={this.props.data} id={file.id} controls={this.controls} />) }
             </div>

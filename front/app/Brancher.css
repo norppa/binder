@@ -51,7 +51,7 @@
 .brancher-actions {
     display: flex;
     border-bottom: 3px solid #D8E6F3;
-    padding: 10px;
+    padding: 0 10px 12px 10px;
 }
 
 .brancher-actions .icon {

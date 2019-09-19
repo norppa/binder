@@ -193,17 +193,25 @@ class Site extends React.Component {
         const activeFile = this.state.data.find(file => file.active) || { name: '', contents: '', disabled: true}
         return (
             <div className="Site">
-                <div className="navi" onClick={this.deselect}>
+                <div className="site-control-container">
+                    <button onClick={this.saveSite}>save</button>
+                    <button>change password</button>
+                    <button>delete</button>
+                </div>
+                <div className="brancher-container" onClick={this.deselect}>
                     <Brancher data={this.state.data}
                         setData={(data) => this.setState({ data })}
-                        onSelect={this.select}
-                        save={this.saveSite}/>
+                        onSelect={this.select} />
                 </div>
                 <div>
-                <textarea value={activeFile.contents}
-                    onChange={this.updateActive}
-                    disabled={activeFile.disabled} />
-                </div>
+
+                    <div className="textarea-container">
+                        <textarea value={activeFile.contents}
+                            onChange={this.updateActive}
+                            disabled={activeFile.disabled} />
+                        </div>
+                    </div>
+
 
                 <this.Modals />
             </div>
