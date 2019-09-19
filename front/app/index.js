@@ -9,7 +9,7 @@ function Router() {
     <BrowserRouter>
         <Switch>
             <Route path="/" exact component={Foo} />
-            <Route path="/:site" component={Site} />
+            <Route path="/binder/:site" component={Site} />
         </Switch>
     </BrowserRouter>
   );
