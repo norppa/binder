@@ -1,5 +1,7 @@
 import React from 'react'
+import { Redirect } from 'react-router-dom'
 import Modal from 'react-modal'
+import Modals from './Modals'
 import Brancher from './Brancher'
 import './Site.css'
 
@@ -12,6 +14,7 @@ class Site extends React.Component {
     state = {
         auth: undefined,
         modal: false,
+        modalMsg: '',
         incorrectPasswordMessage: false,
         passwordValue: '',
         data: undefined
@@ -66,6 +69,10 @@ class Site extends React.Component {
                 this.closeModal()
             })
             .catch(error => null)
+    }
+    logout = () => {
+        window.sessionStorage.removeItem(this.props.match.params.site + '_token')
+        this.setState({ auth: undefined, data: 'redirect-logout', modal: false })
     }
 
     create = (event) => {
@@ -186,16 +193,42 @@ class Site extends React.Component {
         </div>
     )
 
+    modalControls = {
+        closeModal: () => {
+            this.setState({ modal: false, modalMsg: '' })
+        },
+        changePassword: async (newPassword) => {
+            console.log('changing password to ', newPassword)
+            const url = api + '/' + this.props.match.params.site + '/password'
+            const headers = {
+                method: 'PUT',
+                headers: {
+                    'Authorization': 'bearer ' + this.state.auth,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ newPassword })
+            }
+            const fetchResult = await fetch(url, headers)
+            if (fetchResult.status === 201) {
+                this.closeModal()
+            } else {
+                this.setState({ modalMsg: 'Password update failed'})
+            }
+        }
+    }
+
     render () {
         // console.log('render', this.state.data)
         if (this.state.data === undefined) return <this.Modals />
+        if (this.state.data === 'redirect-logout') return <Redirect to='/binder' />
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
         const activeFile = this.state.data.find(file => file.active) || { name: '', contents: '', disabled: true}
         return (
             <div className="Site">
                 <div className="site-control-container">
                     <button onClick={this.saveSite}>save</button>
-                    <button>change password</button>
+                    <button onClick={this.openModal('changePassword')}>change password</button>
+                    <button onClick={this.logout}>log out</button>
                     <button>delete</button>
                 </div>
                 <div className="brancher-container" onClick={this.deselect}>
@@ -214,6 +247,10 @@ class Site extends React.Component {
 
 
                 <this.Modals />
+                <Modals open={this.state.modal}
+                    site={this.props.match.params.site}
+                    controls={this.modalControls}
+                    msg={this.state.modalMsg}/>
             </div>
 
         )

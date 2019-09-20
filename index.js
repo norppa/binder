@@ -48,6 +48,17 @@ app.post('/api/:site/login', async (req, res) => {
         console.log(e)
         res.status(500).send(e.message)
     }
+})
+
+app.put('/api/:site/password', authenticate, async (req, res) => {
+    try {
+        const pwdHash = await bcrypt.hash(req.body.newPassword, 10)
+        await dao.changePassword(req.params.site, pwdHash)
+        res.status(201).send()
+    } catch (e) {
+        console.error(e)
+        res.status(500).send(e)
+    }
 
 })
 
@@ -67,13 +78,12 @@ app.post('/api/:site', async (req, res) => {
     res.send(results)
 })
 
-app.delete('/api/:site', async (req, res) => {
+app.delete('/api/:site', authenticate, async (req, res) => {
     await dao.deleteSite(req.params.site)
     res.status(201).send()
 })
 
-app.put('/api/:site', async (req, res) => {
-    console.log('body', req.body)
+app.put('/api/:site', authenticate, async (req, res) => {
     try {
         const result = await dao.updateSite(req.body, req.params.site)
         res.status(201).send()

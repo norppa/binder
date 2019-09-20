@@ -207,13 +207,13 @@ module.exports = class Dao {
         }
     }
 
-    //unnecessary!!
-    async deleteFile(fileId) {
+    async changePassword(site, pwdHash) {
         const connection = await dbConnection()
         try {
-            const queryStr = 'DELETE FROM bdr_files WHERE id = ?'
+            const queryStr = 'UPDATE bdr_sites set pwdHash = ? where name = ?'
+            const params = [pwdHash, site]
             await connection.query('START TRANSACTION')
-            await connection.query(queryStr, fileId)
+            await connection.query(queryStr, params)
             await connection.query('COMMIT')
         } catch (e) {
             connection.query('ROLLBACK')
