@@ -1,5 +1,6 @@
 import React from 'react'
 import Modal from 'react-modal'
+import './Modals.css'
 
 class Modals extends React.Component {
     state = {
@@ -14,38 +15,58 @@ class Modals extends React.Component {
 
     handleChange = (x) => (event) => this.setState({ [x]: event.target.value })
 
-    pwdMismatch = () => {
-        return this.state.input1 === '' || this.state.input1 !== this.state.input2
-    }
+    pwdMismatch = () => this.state.input1 === '' || this.state.input1 !== this.state.input2
+
+    siteMismatch = () => this.state.input1 !== this.props.site
 
     submitPasswordChange = (event) => {
-        console.log('submit', this.state)
-        event.preventDefault()
-        if (this.state.input1 !== this.state.input2) {
-            this.setState({ showPasswordMismatchMsg: true })
-        } else {
-            this.props.controls.changePassword(this.state.input1)
-            this.setState({ input1: '', input2: '', showPasswordMismatchMsg: false })
-        }
+        this.props.controls.changePassword(this.state.input1)
+        this.setState({ input1: '', input2: '' })
+    }
+
+    submitDeleteSite = (event) => {
+        this.props.controls.deleteSite()
+        this.setState({ input1: '' })
+
     }
 
     render () {
         return (
             <div className="Modals">
-                <Modal isOpen={this.props.open === 'changePassword'} >
-                    <h2>Enter new password to /{this.props.site}</h2>
+                <Modal className="modal" isOpen={this.props.open === 'changePassword'} >
+                    <h2>Change the password to /{this.props.site}</h2>
                     {this.props.msg ? <div>{this.props.msg}</div> : null}
-                        <input type="password"
-                            value={this.state.input}
-                            onChange={this.handleChange('input1')} />
+                        <div className="input-row">
+                            New password: <input type="password"
+                                value={this.state.input}
+                                onChange={this.handleChange('input1')} />
+                        </div>
+                        <div className="input-row">
+                            Confirm password: <input type="password"
+                                value={this.state.input2}
+                                onChange={this.handleChange('input2')} />
+                        </div>
+                        <div className="button-row">
+                            <button onClick={this.submitPasswordChange}
+                                disabled={this.pwdMismatch()}>set new password</button>
+                            <button onClick={this.props.controls.closeModal}>close</button>
+                        </div>
+                </Modal>
+
+                <Modal isOpen={this.props.open === 'confirm-delete'}>
+                    <h2>Delete site /{this.props.site}</h2>
+                    {this.props.msg ? <div>{this.props.msg}</div> : null}
+                    <p>
+                        Are you sure that you want to delete this site and all the files and folders in it?
                         <br />
-                        <input type="password"
-                            value={this.state.input2}
-                            onChange={this.handleChange('input2')} />
+                        The deleted content will be permanently lost.
                         <br />
-                        <button onClick={this.submitPasswordChange}
-                            disabled={this.pwdMismatch()}>set new password</button>
-                        <button onClick={this.props.controls.closeModal}>close</button>
+                        To confirm this action, type the name of the site below:
+                    </p>
+                    <input type="text" value={this.state.input1} onChange={this.handleChange('input1')} />
+                    <button onClick={this.submitDeleteSite}
+                        disabled={this.siteMismatch()}>confirm</button>
+                    <button onClick={this.props.controls.closeModal}>cancel</button>
                 </Modal>
             </div>
         )

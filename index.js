@@ -79,8 +79,13 @@ app.post('/api/:site', async (req, res) => {
 })
 
 app.delete('/api/:site', authenticate, async (req, res) => {
-    await dao.deleteSite(req.params.site)
-    res.status(201).send()
+    try {
+        await dao.deleteSite(req.params.site)
+        res.status(201).send()
+    } catch (e) {
+        console.error(e)
+        res.status(500).send(e)
+    }
 })
 
 app.put('/api/:site', authenticate, async (req, res) => {

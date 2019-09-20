@@ -214,6 +214,21 @@ class Site extends React.Component {
             } else {
                 this.setState({ modalMsg: 'Password update failed'})
             }
+        },
+        deleteSite: async () => {
+            const url = api + '/' + this.props.match.params.site
+            const headers = {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'bearer ' + this.state.auth
+                }
+            }
+            const fetchResult = await fetch(url, headers)
+            if (fetchResult.status === 201) {
+                this.logout()
+            } else {
+                this.setState({ modalMsg: 'Failed to delete ' + this.props.match.params.site })
+            }
         }
     }
 
@@ -229,7 +244,7 @@ class Site extends React.Component {
                     <button onClick={this.saveSite}>save</button>
                     <button onClick={this.openModal('changePassword')}>change password</button>
                     <button onClick={this.logout}>log out</button>
-                    <button>delete</button>
+                    <button onClick={this.openModal('confirm-delete')}>delete</button>
                 </div>
                 <div className="brancher-container" onClick={this.deselect}>
                     <Brancher data={this.state.data}
