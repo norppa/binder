@@ -35,6 +35,12 @@ class Modals extends React.Component {
         this.setState({ input1: '' })
     }
 
+    submitCreateSite = (event) => {
+        event.preventDefault()
+        this.props.controls.createSite(this.state.input1)
+        this.setState({ input1: '' })
+    }
+
     render () {
         return (
             <div className="Modals">
@@ -82,6 +88,30 @@ class Modals extends React.Component {
                     <button onClick={this.submitDeleteSite}
                         disabled={this.siteMismatch()}>confirm</button>
                     <button onClick={this.props.controls.closeModal}>cancel</button>
+                </Modal>
+
+                <Modal className="modal" isOpen={this.props.open === 'create-site'}>
+                    <h2>Create /{this.props.site}</h2>
+                        {this.props.msg ? <div>{this.props.msg}</div> : null}
+                        <div className="input-row">
+                            Enter password: <input type="password"
+                                value={this.state.input}
+                                onChange={this.handleChange('input1')} />
+                        </div>
+                        <div className="input-row">
+                            Confirm password: <input type="password"
+                                value={this.state.input2}
+                                onChange={this.handleChange('input2')} />
+                        </div>
+                        <div className="button-row">
+                            <button onClick={this.submitCreateSite}
+                                disabled={this.pwdMismatch()}>Create Site</button>
+                            <button onClick={this.props.controls.closeModal}>Cancel</button>
+                        </div>
+                </Modal>
+
+                <Modal isOpen={this.state.modal === 'error'}>
+                    <h2>There was an error!</h2>
                 </Modal>
             </div>
         )

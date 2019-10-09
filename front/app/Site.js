@@ -15,8 +15,6 @@ class Site extends React.Component {
         auth: undefined,
         modal: false,
         modalMsg: '',
-        incorrectPasswordMessage: false,
-        passwordValue: '',
         data: undefined
     }
 
@@ -42,7 +40,6 @@ class Site extends React.Component {
 
     handlePasswordValueChange = (event) => this.setState({ passwordValue: event.target.value })
     openModal = (type) => () => this.setState({ modal: type })
-    closeModal = () => this.setState({ modal: false, incorrectPasswordMessage: false })
 
     logout = () => {
         window.sessionStorage.removeItem(this.props.match.params.site + '_token')
@@ -139,23 +136,6 @@ class Site extends React.Component {
         }
     }
 
-    Modals = () => (
-        <div className="Modals">
-            <Modal isOpen={this.state.modal === 'create'}>
-                <h2>Create /{this.props.match.params.site}</h2>
-                <form onSubmit={this.create}>
-                    <input type="password"
-                        value={this.state.passwordValue}
-                        onChange={this.handlePasswordValueChange} />
-                </form>
-            </Modal>
-
-            <Modal isOpen={this.state.modal === 'error'}>
-                <h2>There was an error!</h2>
-            </Modal>
-        </div>
-    )
-
     modalControls = {
         closeModal: () => {
             this.setState({ modal: false, modalMsg: '' })
@@ -212,24 +192,10 @@ class Site extends React.Component {
             } else {
                 console.error('something went wrong', fetchResult)
             }
-                // .then(response => {
-                //     if (response.status === 200) {
-                //         return response.json()
-                //     }
-                //     if (response.status === 401) {
-                //         this.setState({ incorrectPasswordMessage: true })
-                //         throw new Error('incorrect password')
-                //     } else {
-                //         console.error('something went wrong', response)
-                //         throw new Error('something went wrong')
-                //     }
-                // })
-                // .then(response => {
-                //     window.sessionStorage.setItem(this.props.match.params.site + '_token', response.token)
-                //     this.setState({ auth: response.token }, this.getFiles)
-                //     this.closeModal()
-                // })
-                // .catch(error => null)
+        },
+        createSite: async (site) => {
+            console.log('createSite', site)
+            this.modalControls.closeModal()
         }
     }
 
@@ -264,8 +230,6 @@ class Site extends React.Component {
                         </div>
                     </div>
 
-
-                <this.Modals />
                 <Modals open={this.state.modal}
                     site={this.props.match.params.site}
                     controls={this.modalControls}
