@@ -35,41 +35,15 @@ class Site extends React.Component {
                 this.setState({ modal: 'login' })
             }
         } else {
-            this.setState({ modal: 'create' })
+            console.log('create-site')
+            this.setState({ modal: 'create-site' })
         }
     }
 
     handlePasswordValueChange = (event) => this.setState({ passwordValue: event.target.value })
     openModal = (type) => () => this.setState({ modal: type })
     closeModal = () => this.setState({ modal: false, incorrectPasswordMessage: false })
-    login = (event) => {
-        event.preventDefault()
-        const url = api + '/' + this.props.match.params.site + '/login'
-        const headers = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: this.state.passwordValue })
-        }
-        fetch(url, headers)
-            .then(response => {
-                if (response.status === 200) {
-                    return response.json()
-                }
-                if (response.status === 401) {
-                    this.setState({ incorrectPasswordMessage: true })
-                    throw new Error('incorrect password')
-                } else {
-                    console.error('something went wrong', response)
-                    throw new Error('something went wrong')
-                }
-            })
-            .then(response => {
-                window.sessionStorage.setItem(this.props.match.params.site + '_token', response.token)
-                this.setState({ auth: response.token }, this.getFiles)
-                this.closeModal()
-            })
-            .catch(error => null)
-    }
+
     logout = () => {
         window.sessionStorage.removeItem(this.props.match.params.site + '_token')
         this.setState({ auth: undefined, data: 'redirect-logout', modal: false })
@@ -167,17 +141,6 @@ class Site extends React.Component {
 
     Modals = () => (
         <div className="Modals">
-            <Modal isOpen={this.state.modal === 'login'}
-                contentLabel={`Please log in to ${this.props.match.params.site}`}>
-                {this.state.incorrectPasswordMessage ? <div>Incorrect Password!</div> : null}
-                <h2>Log in to /{this.props.match.params.site}</h2>
-                <form onSubmit={this.login}>
-                    <input type="password"
-                        value={this.state.passwordValue}
-                        onChange={this.handlePasswordValueChange} />
-                </form>
-            </Modal>
-
             <Modal isOpen={this.state.modal === 'create'}>
                 <h2>Create /{this.props.match.params.site}</h2>
                 <form onSubmit={this.create}>
@@ -229,12 +192,53 @@ class Site extends React.Component {
             } else {
                 this.setState({ modalMsg: 'Failed to delete ' + this.props.match.params.site })
             }
+        },
+        login: async (password) => {
+            const url = api + '/' + this.props.match.params.site + '/login'
+            const headers = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            }
+            console.log(url, headers)
+            const fetchResult = await fetch(url, headers)
+            if (fetchResult.status === 200) {
+                const result = await fetchResult.json()
+                window.sessionStorage.setItem(this.props.match.params.site + '_token', result.token)
+                this.setState({ auth: result.token }, this.getFiles)
+                this.modalControls.closeModal()
+            } else if (fetchResult.status === 401) {
+                this.setState({ modalMsg: 'incorrect password' })
+            } else {
+                console.error('something went wrong', fetchResult)
+            }
+                // .then(response => {
+                //     if (response.status === 200) {
+                //         return response.json()
+                //     }
+                //     if (response.status === 401) {
+                //         this.setState({ incorrectPasswordMessage: true })
+                //         throw new Error('incorrect password')
+                //     } else {
+                //         console.error('something went wrong', response)
+                //         throw new Error('something went wrong')
+                //     }
+                // })
+                // .then(response => {
+                //     window.sessionStorage.setItem(this.props.match.params.site + '_token', response.token)
+                //     this.setState({ auth: response.token }, this.getFiles)
+                //     this.closeModal()
+                // })
+                // .catch(error => null)
         }
     }
 
     render () {
-        // console.log('render', this.state.data)
-        if (this.state.data === undefined) return <this.Modals />
+        console.log('render', this.state.data)
+        if (this.state.data === undefined) return <Modals open={this.state.modal}
+            site={this.props.match.params.site}
+            controls={this.modalControls}
+            msg={this.state.modalMsg}/>
         if (this.state.data === 'redirect-logout') return <Redirect to='/binder' />
         // colors #425270 60ADD0 92ADC4 D8E6F3 57394D
         const activeFile = this.state.data.find(file => file.active) || { name: '', contents: '', disabled: true}
