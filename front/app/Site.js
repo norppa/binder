@@ -19,7 +19,7 @@ class Site extends React.Component {
     }
 
     async componentDidMount() {
-        console.log('componentDidMount')
+        // console.log('componentDidMount')
         const site = this.props.match.params.site
         const siteExists = await this.siteExists(site)
         const token = window.sessionStorage.getItem
@@ -193,14 +193,41 @@ class Site extends React.Component {
                 console.error('something went wrong', fetchResult)
             }
         },
-        createSite: async (site) => {
-            console.log('createSite', site)
+        createSite: async (password) => {
+        console.log('createSite', this.props.match.params.site)
+            const url = api + '/' + this.props.match.params.site
+            const headers = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            }
+            const fetchResult = await fetch(url, headers)
+            if (fetchResult.status !== 200) {
+                console.error('something went wrong', fetchResult)
+                return
+            }
+            const result = await fetchResult.json()
+
+            const url2 = api + '/' + this.props.match.params.site + '/login'
+            const headers2 = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            }
+            const fetchResult2 = await fetch(url2, headers2)
+            if (fetchResult2.status !== 200) {
+                console.error('something went wrong 2', fetchResult2)
+                return
+            }
+            const result2 = await fetchResult2.json()
+            window.sessionStorage.setItem(this.props.match.params.site + '_token', result2.token)
+            this.setState({ auth: result2.token }, this.getFiles)
             this.modalControls.closeModal()
         }
     }
 
     render () {
-        console.log('render', this.state.data)
+        // console.log('render', this.state.data)
         if (this.state.data === undefined) return <Modals open={this.state.modal}
             site={this.props.match.params.site}
             controls={this.modalControls}
