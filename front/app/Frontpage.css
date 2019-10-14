@@ -1,0 +1,27 @@
+.Frontpage {
+    display: grid;
+    grid-template-columns: 20% 60% 20%;
+    grid-template-rows: 80px auto;
+}
+
+.frontpage-content {
+    background-color: #32394D;
+    padding: 30px;
+    border-radius: 10px;
+    color: #D8E6F3;
+    border: 10px solid #32394D;
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+}
+
+.dot {
+    position: relative;
+    top: 8px;
+    margin-left: 20px;
+    padding: 0;
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
+    display: inline-block;
+
+}

@@ -65,11 +65,13 @@ app.put('/api/:site/password', authenticate, async (req, res) => {
 
 app.get('/api', async (req, res) => {
     const results = await dao.getAllSites()
+    if (results === undefined) {
+        res.status(500).send()
+    }
     res.send(results.map(result => result.name))
 })
 
 app.get('/api/:site', async (req, res) => {
-    console.log('/api/:site')
     const results = await dao.siteExists(req.params.site)
     if (!results) {
         res.status(500).send()

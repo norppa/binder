@@ -75,9 +75,7 @@ module.exports = class Dao {
     }
 
     async siteExists(siteName) {
-        console.log('siteExists')
         const connection = await dbConnection()
-        console.log('connection', connection)
         if (connection === undefined) {
             return undefined
         }
