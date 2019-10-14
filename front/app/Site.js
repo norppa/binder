@@ -62,13 +62,12 @@ class Site extends React.Component {
 
     siteExists = async () => {
         const url = api + '/' + this.props.match.params.site
-        console.log('url', url)
         const fetchResult = await fetch(url)
         if (fetchResult.status !== 200) {
             this.openModal('error', 'Failed to connect to database')()
-            // return console.error('siteExists failed', fetchResult)
+            return console.error('siteExists failed', fetchResult)
         }
-        // return await fetchResult.json()
+        return await fetchResult.json()
     }
 
     saveSite = async () => {
