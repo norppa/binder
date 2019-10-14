@@ -107,10 +107,13 @@ class Brancher extends React.Component {
         createFile: () => {
             const selected = this.props.data.find(file => file.selected)
             const parent = selected ? (selected.isFolder ? selected.id : selected.parent) : null
-            const filesNamedNewFile = this.props.data.filter(file => file.parent === parent && file.name.includes('new_file_')).length
+            const largestNewFile = this.props.data.filter(file => /new_file_\d/.test(file.name))
+                                                .map(file => parseInt(file.name.replace('new_file_', '')))
+                                                .reduce((acc, cur) => acc > cur ? acc : cur, 0)
+
             const newFile = {
                 id: this.props.data.reduce((acc, cur) => Math.max(cur.id, acc), 1) + 1,
-                name: 'new_file_' + (filesNamedNewFile + 1),
+                name: 'new_file_' + (largestNewFile + 1),
                 contents: '',
                 parent,
                 created: true,
@@ -127,10 +130,12 @@ class Brancher extends React.Component {
         createFolder: () => {
             const selected = this.props.data.find(file => file.selected)
             const parent = selected ? (selected.isFolder ? selected.id : selected.parent) : null
-            const filesNamedNewFile = this.props.data.filter(file => file.parent === parent && file.name.includes('new_file_')).length
+            const largestNewFolder = this.props.data.filter(file => /new_folder_\d/.test(file.name))
+                                                .map(file => parseInt(file.name.replace('new_folder_', '')))
+                                                .reduce((acc, cur) => acc > cur ? acc : cur, 0)
             const newFolder = {
                 id: this.props.data.reduce((acc, cur) => Math.max(cur.id, acc), 1) + 1,
-                name: 'new_folder_' + (filesNamedNewFile + 1),
+                name: 'new_folder_' + (largestNewFolder + 1),
                 isFolder: true,
                 parent,
                 created: true,
