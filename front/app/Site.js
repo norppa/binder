@@ -122,7 +122,8 @@ class Site extends React.Component {
     }
 
     deselect = (event) => {
-        if (event.target.className === 'navi' || event.target.className === 'navi-btns') {
+        console.log('deselect', event.target.className)
+        if (event.target.className === 'brancher-container' || event.target.className === 'brancher-actions') {
             const data = this.state.data.map(file => {
                 if (file.isFolder) {
                     return { ...file, selecte: false }
