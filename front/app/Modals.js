@@ -110,8 +110,8 @@ class Modals extends React.Component {
                         </div>
                 </Modal>
 
-                <Modal isOpen={this.state.modal === 'error'}>
-                    <h2>There was an error!</h2>
+                <Modal className="modal error" isOpen={this.props.open === 'error'}>
+                    <h2>{this.props.msg}</h2>
                 </Modal>
             </div>
         )

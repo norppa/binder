@@ -55,6 +55,9 @@ const createQuery = ({ id, name, parent, contents, isFolder, removed, created, m
 module.exports = class Dao {
     async getAllSites() {
         const connection = await dbConnection()
+        if (connection === undefined) {
+            return undefined
+        }
         try {
             const queryStr = 'SELECT name FROM bdr_sites'
             await connection.query('START TRANSACTION')
@@ -72,7 +75,12 @@ module.exports = class Dao {
     }
 
     async siteExists(siteName) {
+        console.log('siteExists')
         const connection = await dbConnection()
+        console.log('connection', connection)
+        if (connection === undefined) {
+            return undefined
+        }
         try {
             const queryStr = 'SELECT name FROM bdr_sites WHERE name = ?'
             const params = [siteName]
@@ -92,6 +100,9 @@ module.exports = class Dao {
 
     async createSite(siteName, pwdHash) {
         const connection = await dbConnection()
+        if (connection === undefined) {
+            return undefined
+        }
         try {
             const queryStr = 'INSERT INTO bdr_sites(name, pwdHash) VALUES(?, ?)'
             const params = [siteName, pwdHash]
@@ -114,6 +125,9 @@ module.exports = class Dao {
     async updateSite(fileList, site) {
         console.log('updateSite', fileList, site)
         const connection = await dbConnection()
+        if (connection === undefined) {
+            return undefined
+        }
         try {
             await connection.query('START TRANSACTION')
             for (let i = 0; i < fileList.length; i++) {
@@ -133,6 +147,9 @@ module.exports = class Dao {
 
     async deleteSite(siteName) {
         const connection = await dbConnection()
+        if (connection === undefined) {
+            return undefined
+        }
         try {
             const query1 = 'DELETE FROM bdr_files WHERE fk_site = ?'
             const query2 = 'DELETE FROM bdr_sites WHERE name = ?'
@@ -154,6 +171,9 @@ module.exports = class Dao {
 
     async getPwdHash(siteName) {
         const connection = await dbConnection()
+        if (connection === undefined) {
+            return undefined
+        }
         try {
             const queryStr = 'SELECT pwdHash FROM bdr_sites WHERE name = ?'
             const params = [siteName]
@@ -173,6 +193,9 @@ module.exports = class Dao {
 
     async getFiles(siteName) {
         const connection = await dbConnection()
+        if (connection === undefined) {
+            return undefined
+        }
         try {
             const queryStr = 'SELECT id, name, isFolder, parent FROM bdr_files WHERE fk_site = ?'
             await connection.query('START TRANSACTION')
@@ -191,6 +214,9 @@ module.exports = class Dao {
 
     async getFileDetails(fileId) {
         const connection = await dbConnection()
+        if (connection === undefined) {
+            return undefined
+        }
         try {
             const queryStr = 'SELECT name, contents, isFolder, parent FROM bdr_files WHERE id = ?'
             await connection.query('START TRANSACTION')
@@ -209,6 +235,9 @@ module.exports = class Dao {
 
     async changePassword(site, pwdHash) {
         const connection = await dbConnection()
+        if (connection === undefined) {
+            return undefined
+        }
         try {
             const queryStr = 'UPDATE bdr_sites set pwdHash = ? where name = ?'
             const params = [pwdHash, site]

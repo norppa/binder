@@ -12,17 +12,16 @@ const dbConfig = {
 }
 
 module.exports = async () => {
+    console.log('start')
     try {
-        let pool
-        let connection
-        if (pool) {
-            connection = pool.getConnection()
-        } else {
+        let pool, connection
+        if (!pool) {
             pool = await mysql.createPool(dbConfig)
-            connection = pool.getConnection()
         }
+        connection = await pool.getConnection()
         return connection
-    } catch (exception) {
-        throw exception
+    } catch (error) {
+        console.error('Error connecting to database!\n', error)
+        return undefined
     }
 }

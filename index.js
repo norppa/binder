@@ -32,6 +32,7 @@ const error = (e, res) => {
 }
 
 app.post('/api/:site/login', async (req, res) => {
+    console.log('/api/:site/login')
     const pwdHash = await dao.getPwdHash(req.params.site)
     if (!pwdHash) {
         return res.status(400).send('site /' + req.params.site + ' not found')
@@ -68,7 +69,11 @@ app.get('/api', async (req, res) => {
 })
 
 app.get('/api/:site', async (req, res) => {
+    console.log('/api/:site')
     const results = await dao.siteExists(req.params.site)
+    if (!results) {
+        res.status(500).send()
+    }
     res.send(results)
 })
 

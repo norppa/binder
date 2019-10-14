@@ -39,7 +39,7 @@ class Site extends React.Component {
     }
 
     handlePasswordValueChange = (event) => this.setState({ passwordValue: event.target.value })
-    openModal = (type) => () => this.setState({ modal: type })
+    openModal = (type, modalMsg = '') => () => this.setState({ modal: type, modalMsg }, () => console.log('this.state', this.state))
 
     logout = () => {
         window.sessionStorage.removeItem(this.props.match.params.site + '_token')
@@ -65,9 +65,10 @@ class Site extends React.Component {
         console.log('url', url)
         const fetchResult = await fetch(url)
         if (fetchResult.status !== 200) {
-            return console.error('siteExists failed', fetchResult)
+            this.openModal('error', 'Failed to connect to database')()
+            // return console.error('siteExists failed', fetchResult)
         }
-        return await fetchResult.json()
+        // return await fetchResult.json()
     }
 
     saveSite = async () => {
