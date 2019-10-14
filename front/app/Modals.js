@@ -26,6 +26,7 @@ class Modals extends React.Component {
     }
 
     submitPasswordChange = (event) => {
+        event.preventDefault()
         this.props.controls.changePassword(this.state.input1)
         this.setState({ input1: '', input2: '' })
     }
@@ -51,27 +52,33 @@ class Modals extends React.Component {
                     <form onSubmit={this.submitLogin}>
                         <input type="password"
                             value={this.state.input1}
-                            onChange={this.handleChange('input1')} />
+                            onChange={this.handleChange('input1')}
+                            autoFocus />
                     </form>
                 </Modal>
                 <Modal className="modal" isOpen={this.props.open === 'changePassword'} >
                     <h2>Change the password to /{this.props.site}</h2>
                     {this.props.msg ? <div>{this.props.msg}</div> : null}
-                        <div className="input-row">
-                            New password: <input type="password"
-                                value={this.state.input}
-                                onChange={this.handleChange('input1')} />
-                        </div>
-                        <div className="input-row">
-                            Confirm password: <input type="password"
-                                value={this.state.input2}
-                                onChange={this.handleChange('input2')} />
-                        </div>
-                        <div className="button-row">
-                            <button onClick={this.submitPasswordChange}
-                                disabled={this.pwdMismatch()}>set new password</button>
-                            <button onClick={this.props.controls.closeModal}>close</button>
-                        </div>
+                        <form onSubmit={this.submitPasswordChange}>
+                            <div className="input-row">
+                                New password: <input type="password"
+                                    value={this.state.input}
+                                    onChange={this.handleChange('input1')}
+                                    autoFocus />
+                            </div>
+                            <div className="input-row">
+                                Confirm password: <input type="password"
+                                    value={this.state.input2}
+                                    onChange={this.handleChange('input2')} />
+                            </div>
+                            <div className="button-row">
+                                <button type="submit"
+                                    onClick={this.submitPasswordChange}
+                                    disabled={this.pwdMismatch()}>set new password</button>
+                                <button onClick={this.props.controls.closeModal}>close</button>
+                            </div>
+                        </form>
+
                 </Modal>
 
                 <Modal className="modal" isOpen={this.props.open === 'confirm-delete'}>
@@ -84,7 +91,9 @@ class Modals extends React.Component {
                         <br />
                         To confirm this action, type the name of the site below:
                     </p>
-                    <input type="text" value={this.state.input1} onChange={this.handleChange('input1')} />
+                    <input type="text" value={this.state.input1}
+                        onChange={this.handleChange('input1')}
+                        autoFocus />
                     <button onClick={this.submitDeleteSite}
                         disabled={this.siteMismatch()}>confirm</button>
                     <button onClick={this.props.controls.closeModal}>cancel</button>
@@ -93,21 +102,26 @@ class Modals extends React.Component {
                 <Modal className="modal" isOpen={this.props.open === 'create-site'}>
                     <h2>Create /{this.props.site}</h2>
                         {this.props.msg ? <div>{this.props.msg}</div> : null}
-                        <div className="input-row">
-                            Enter password: <input type="password"
-                                value={this.state.input}
-                                onChange={this.handleChange('input1')} />
-                        </div>
-                        <div className="input-row">
-                            Confirm password: <input type="password"
-                                value={this.state.input2}
-                                onChange={this.handleChange('input2')} />
-                        </div>
-                        <div className="button-row">
-                            <button onClick={this.submitCreateSite}
-                                disabled={this.pwdMismatch()}>Create Site</button>
-                            <button onClick={this.props.controls.closeModal}>Cancel</button>
-                        </div>
+                        <form onSubmit={this.submitCreateSite}>
+                            <div className="input-row">
+                                Enter password: <input type="password"
+                                    value={this.state.input}
+                                    onChange={this.handleChange('input1')}
+                                    autoFocus />
+                            </div>
+                            <div className="input-row">
+                                Confirm password: <input type="password"
+                                    value={this.state.input2}
+                                    onChange={this.handleChange('input2')} />
+                            </div>
+                            <div className="button-row">
+                                <button type="submit"
+                                    onClick={this.submitCreateSite}
+                                    disabled={this.pwdMismatch()}>Create Site</button>
+                                <button onClick={this.props.controls.closeModal}>Cancel</button>
+                            </div>
+                        </form>
+
                 </Modal>
 
                 <Modal className="modal error" isOpen={this.props.open === 'error'}>

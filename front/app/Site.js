@@ -151,7 +151,7 @@ class Site extends React.Component {
             }
             const fetchResult = await fetch(url, headers)
             if (fetchResult.status === 201) {
-                this.closeModal()
+                this.modalControls.closeModal()
             } else {
                 this.setState({ modalMsg: 'Password update failed'})
             }

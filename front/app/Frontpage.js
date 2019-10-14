@@ -58,7 +58,8 @@ class Frontpage extends React.Component {
                     <p>Please select a site:
                         <input type="text"
                             value={this.state.input}
-                            onChange={this.handleInput} />
+                            onChange={this.handleInput}
+                            autoFocus />
                         <span className="dot" style={{ backgroundColor: this.state.siteFreeIndicatorColor }}></span>
                     </p>
                 </form>
