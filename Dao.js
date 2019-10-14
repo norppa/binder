@@ -9,14 +9,14 @@ const createUpdateSiteQuery = ({ id, name, parent, contents, isFolder, removed, 
         }
         const queryStr = 'INSERT INTO bdr_files (name, contents, parent, isFolder, fk_site) VALUES (?, ?, ?, ?, ?)'
         const params = [name, contents || '', parent || null, !!isFolder, site]
-        return { query: queryStr, params: params }
+        return { queryStr: queryStr, params: params }
     }
 
     if (removed) {
         if (!id) {
             throw new Error('missing id from a delete command')
         }
-        return { query: 'DELETE FROM bdr_files WHERE id = ?', params: [id] }
+        return { queryStr: 'DELETE FROM bdr_files WHERE id = ?', params: [id] }
     }
 
     if (modified) {
@@ -101,6 +101,7 @@ module.exports = class Dao {
 
     async updateSite(fileList, site) {
         const queryList = fileList.map(file => createUpdateSiteQuery(file, site))
+        console.log('queryList', queryList)
         await transaction(queryList)
     }
 
