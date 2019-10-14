@@ -19,7 +19,7 @@ class Site extends React.Component {
     }
 
     async componentDidMount() {
-        // console.log('componentDidMount')
+        // console.log('componentDidMount', this.props.match.params.site)
         const site = this.props.match.params.site
         const siteExists = await this.siteExists(site)
         const token = window.sessionStorage.getItem
@@ -33,7 +33,6 @@ class Site extends React.Component {
                 this.setState({ modal: 'login' })
             }
         } else {
-            console.log('create-site')
             this.setState({ modal: 'create-site' })
         }
     }
@@ -104,7 +103,6 @@ class Site extends React.Component {
     }
 
     select = async (selected) => {
-        console.log('select', selected)
         const file = this.state.data.find(file => file.id === selected)
         if (file.isFolder) return
 
@@ -194,7 +192,6 @@ class Site extends React.Component {
             }
         },
         createSite: async (password) => {
-        console.log('createSite', this.props.match.params.site)
             const url = api + '/' + this.props.match.params.site
             const headers = {
                 method: 'POST',

@@ -14,7 +14,7 @@ class Frontpage extends React.Component {
     }
 
     async componentDidMount() {
-        console.log('Frontpage.componentDidMount')
+        // console.log('Frontpage.componentDidMount')
         const fetchResult = await fetch('http://localhost:3000/api')
         if (fetchResult.status !== 200) {
             this.setState({ errorMsg: 'Error fetching site information from the database'})
@@ -25,7 +25,6 @@ class Frontpage extends React.Component {
     }
 
     handleInput = (event) => {
-        console.log('sites', this.state.sites)
         const input = event.target.value
         let siteFreeIndicatorColor
         if (input.length < 3) {
@@ -69,7 +68,7 @@ class Frontpage extends React.Component {
 
     render () {
         if (this.state.redirect) {
-            return <Redirect to={this.state.input} />
+            return <Redirect to={'/binder/' + this.state.input} />
         }
         if (this.state.errorMsg) {
             return this.ErrorPage()

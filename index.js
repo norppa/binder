@@ -3,6 +3,7 @@ const express = require('express')
 const cors = require('cors')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const morgan = require('morgan')
 const path = require('path')
 const app = express()
 const port = 3000
@@ -13,6 +14,7 @@ const dao = new Dao()
 
 app.use(cors())
 app.use(express.json())
+app.use(morgan('tiny'))
 app.use(express.static('front/dist'))
 
 const authenticate = (req, res, next) => {
@@ -73,8 +75,8 @@ app.get('/api', async (req, res) => {
 
 app.get('/api/:site', async (req, res) => {
     const results = await dao.siteExists(req.params.site)
-    if (!results) {
-        res.status(500).send()
+    if (results === undefined) {
+        return res.status(500).send()
     }
     res.send(results)
 })

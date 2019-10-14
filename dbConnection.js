@@ -12,7 +12,6 @@ const dbConfig = {
 }
 
 module.exports = async () => {
-    console.log('start')
     try {
         let pool, connection
         if (!pool) {

@@ -1,6 +1,6 @@
 const dbConnection = require('./dbConnection')
 
-const createQuery = ({ id, name, parent, contents, isFolder, removed, created, modified }, site) => {
+const createUpdateSiteQuery = ({ id, name, parent, contents, isFolder, removed, created, modified }, site) => {
 
     if (created) {
         console.log('create is true')
@@ -45,211 +45,101 @@ const createQuery = ({ id, name, parent, contents, isFolder, removed, created, m
         queryStr += ' WHERE id = ?'
         params = params.concat(id)
 
-        return { query: queryStr, params: params }
+        return { queryStr, params }
 
     }
 
     throw new Error('missing created/removed/modified value')
 }
 
+const transaction = async (queryList) => {
+    const connection = await dbConnection()
+    if (connection === undefined) {
+        return undefined
+    }
+    try {
+        await connection.query('START TRANSACTION')
+        let results
+        queryList.forEach(async (query) => {
+            const { queryStr, params } = query
+            results = await connection.query(queryStr, params)
+        })
+        await connection.query('COMMIT')
+        return results
+    } catch (e) {
+        connection.query('ROLLBACK')
+        console.error(e)
+        throw e
+    } finally {
+        await connection.release()
+        await connection.destroy()
+    }
+}
+
 module.exports = class Dao {
     async getAllSites() {
-        const connection = await dbConnection()
-        if (connection === undefined) {
-            return undefined
-        }
-        try {
-            const queryStr = 'SELECT name FROM bdr_sites'
-            await connection.query('START TRANSACTION')
-            const results = await connection.query(queryStr)
-            await connection.query('COMMIT')
-            return results
-        } catch (e) {
-            connection.query('ROLLBACK')
-            console.error(e)
-            throw e
-        } finally {
-            await connection.release()
-            await connection.destroy()
-        }
+        const queryList = [
+            { queryStr: 'SELECT name FROM bdr_sites', params: undefined }
+        ]
+        return await transaction(queryList)
     }
 
     async siteExists(siteName) {
-        const connection = await dbConnection()
-        if (connection === undefined) {
-            return undefined
-        }
-        try {
-            const queryStr = 'SELECT name FROM bdr_sites WHERE name = ?'
-            const params = [siteName]
-            await connection.query('START TRANSACTION')
-            const results = await connection.query(queryStr, params)
-            await connection.query('COMMIT')
-            return results.length > 0
-        } catch (e) {
-            connection.query('ROLLBACK')
-            console.error(e)
-            throw e
-        } finally {
-            await connection.release()
-            await connection.destroy()
-        }
+        const queryList = [
+            { queryStr: 'SELECT name FROM bdr_sites WHERE name = ?', params: siteName }
+        ]
+        const results = await transaction(queryList)
+        return results.length > 0
     }
 
     async createSite(siteName, pwdHash) {
-        const connection = await dbConnection()
-        if (connection === undefined) {
-            return undefined
-        }
-        try {
-            const queryStr = 'INSERT INTO bdr_sites(name, pwdHash) VALUES(?, ?)'
-            const params = [siteName, pwdHash]
-
-            await connection.query('START TRANSACTION')
-            const results = await connection.query(queryStr, params)
-            await connection.query('COMMIT')
-
-            return results
-        } catch (e) {
-            connection.query('ROLLBACK')
-            console.error(e)
-            throw e
-        } finally {
-            await connection.release()
-            await connection.destroy()
-        }
+        const queryList = [
+            { queryStr: 'INSERT INTO bdr_sites(name, pwdHash) VALUES(?, ?)', params: [siteName, pwdHash] }
+        ]
+        return await transaction(queryList)
     }
 
     async updateSite(fileList, site) {
-        console.log('updateSite', fileList, site)
-        const connection = await dbConnection()
-        if (connection === undefined) {
-            return undefined
-        }
-        try {
-            await connection.query('START TRANSACTION')
-            for (let i = 0; i < fileList.length; i++) {
-                const { query, params } = createQuery(fileList[i], site)
-                await connection.query(query, params)
-            }
-            await connection.query('COMMIT')
-        } catch (e) {
-            connection.query('ROLLBACK')
-            console.error(e)
-            throw e
-        } finally {
-            await connection.release()
-            await connection.destroy()
-        }
+        const queryList = fileList.map(file => createUpdateSiteQuery(file, site))
+        await transaction(queryList)
     }
 
     async deleteSite(siteName) {
-        const connection = await dbConnection()
-        if (connection === undefined) {
-            return undefined
-        }
-        try {
-            const query1 = 'DELETE FROM bdr_files WHERE fk_site = ?'
-            const query2 = 'DELETE FROM bdr_sites WHERE name = ?'
-            const params = [siteName]
-
-            await connection.query('START TRANSACTION')
-            await connection.query(query1, params)
-            await connection.query(query2, params)
-            await connection.query('COMMIT')
-        } catch (e) {
-            connection.query('ROLLBACK')
-            console.error(e)
-            throw e
-        } finally {
-            await connection.release()
-            await connection.destroy()
-        }
+        const queryList = [
+            { queryStr: 'DELETE FROM bdr_files WHERE fk_site = ?', params: siteName },
+            { queryStr: 'DELETE FROM bdr_sites WHERE name = ?', params: siteName }
+        ]
+        await transaction(queryList)
     }
 
     async getPwdHash(siteName) {
-        const connection = await dbConnection()
-        if (connection === undefined) {
-            return undefined
-        }
-        try {
-            const queryStr = 'SELECT pwdHash FROM bdr_sites WHERE name = ?'
-            const params = [siteName]
-            await connection.query('START TRANSACTION')
-            const results = await connection.query(queryStr, params)
-            await connection.query('COMMIT')
-            return results[0].pwdHash
-        } catch (e) {
-            connection.query('ROLLBACK')
-            console.error(e)
-            throw e
-        } finally {
-            await connection.release()
-            await connection.destroy()
-        }
+        const queryList = [
+            { queryStr: 'SELECT pwdHash FROM bdr_sites WHERE name = ?', params: siteName }
+        ]
+        const results = await transaction(queryList)
+        return results[0].pwdHash
     }
 
     async getFiles(siteName) {
-        const connection = await dbConnection()
-        if (connection === undefined) {
-            return undefined
-        }
-        try {
-            const queryStr = 'SELECT id, name, isFolder, parent FROM bdr_files WHERE fk_site = ?'
-            await connection.query('START TRANSACTION')
-            const results = await connection.query(queryStr, siteName)
-            await connection.query('COMMIT')
-            return results
-        } catch (e) {
-            connection.query('ROLLBACK')
-            console.error(e)
-            throw e
-        } finally {
-            await connection.release()
-            await connection.destroy()
-        }
+        const queryList = [
+            { queryStr: 'SELECT id, name, isFolder, parent FROM bdr_files WHERE fk_site = ?', params: siteName }
+        ]
+        return await transaction(queryList)
     }
 
     async getFileDetails(fileId) {
-        const connection = await dbConnection()
-        if (connection === undefined) {
-            return undefined
-        }
-        try {
-            const queryStr = 'SELECT name, contents, isFolder, parent FROM bdr_files WHERE id = ?'
-            await connection.query('START TRANSACTION')
-            const results = await connection.query(queryStr, fileId)
-            await connection.query('COMMIT')
-            return results[0]
-        } catch (e) {
-            connection.query('ROLLBACK')
-            console.error(e)
-            throw e
-        } finally {
-            await connection.release()
-            await connection.destroy()
-        }
+        const queryList = [
+            { queryStr: 'SELECT name, contents, isFolder, parent FROM bdr_files WHERE id = ?', params: fileId }
+        ]
+        const results = await transaction(queryList)
+        return results[0]
     }
 
     async changePassword(site, pwdHash) {
-        const connection = await dbConnection()
-        if (connection === undefined) {
-            return undefined
-        }
-        try {
-            const queryStr = 'UPDATE bdr_sites set pwdHash = ? where name = ?'
-            const params = [pwdHash, site]
-            await connection.query('START TRANSACTION')
-            await connection.query(queryStr, params)
-            await connection.query('COMMIT')
-        } catch (e) {
-            connection.query('ROLLBACK')
-            console.error(e)
-            throw e
-        } finally {
-            await connection.release()
-            await connection.destroy()
-        }
+        const queryList = [
+            { queryStr: 'UPDATE bdr_sites set pwdHash = ? where name = ?', params: [pwdHash, site] }
+        ]
+        await transaction(queryList)
     }
 
 }
