@@ -1,4 +1,5 @@
 import React from 'react'
+import { Redirect } from 'react-router-dom'
 import './Frontpage.css'
 
 const api = 'http://localhost:3000/api'
@@ -8,7 +9,8 @@ class Frontpage extends React.Component {
         sites: undefined,
         input: '',
         siteFreeIndicatorColor: '#D8E6F3',
-        errorMsg: ''
+        errorMsg: '',
+        redirect: false
     }
 
     async componentDidMount() {
@@ -36,29 +38,43 @@ class Frontpage extends React.Component {
         this.setState({ input, siteFreeIndicatorColor })
     }
 
-    render () {
-        if (this.state.errorMsg) {
-            return (
-                <div className="Frontpage">
-                    <div className="frontpage-content">
-                        <h2 className="error">{this.state.errorMsg}</h2>
-                    </div>
-                </div>
-            )
-        }
-        return (
-            <div className="Frontpage">
-                <div className="frontpage-content">
-                    <h1>Welcome to Binder</h1>
+    enter = (event) => {
+        event.preventDefault()
+        this.setState({ redirect: true })
+    }
+
+    ErrorPage = () => (
+        <div className="Frontpage">
+            <div className="frontpage-content">
+                <h2 className="error">{this.state.errorMsg}</h2>
+            </div>
+        </div>
+    )
+
+    Contents = () => (
+        <div className="Frontpage">
+            <div className="frontpage-content">
+                <h1>Welcome to Binder</h1>
+                <form onSubmit={this.enter}>
                     <p>Please select a site:
                         <input type="text"
                             value={this.state.input}
                             onChange={this.handleInput} />
                         <span className="dot" style={{ backgroundColor: this.state.siteFreeIndicatorColor }}></span>
                     </p>
-                </div>
+                </form>
             </div>
-        )
+        </div>
+    )
+
+    render () {
+        if (this.state.redirect) {
+            return <Redirect to={this.state.input} />
+        }
+        if (this.state.errorMsg) {
+            return this.ErrorPage()
+        }
+        return this.Contents()
     }
 }
 
