@@ -85,11 +85,11 @@ class Brancher extends React.Component {
             let data = this.props.data
             while (remove.length > 0) {
                 const children = data.filter(file => remove.includes(file.parent))
-                console.log('children to be removed', children)
+                // console.log('children to be removed', children)
                 data = data
                     // remove files created since the last save
                     .filter(file => {
-                        if (file.created && remove.includes.file(id)) {
+                        if (file.created && remove.includes(file.id)) {
                             return false
                         } else {
                             return true
