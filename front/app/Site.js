@@ -241,7 +241,6 @@ class Site extends React.Component {
                     <button onClick={this.openModal('changePassword')}>change password</button>
                     <button onClick={this.logout}>log out</button>
                     <button onClick={this.openModal('confirm-delete')}>delete</button>
-                    <button onClick={() => console.log('this.state.data', this.state.data)}>debug</button>
                 </div>
                 <div className="brancher-container" onClick={this.deselect}>
                     <Brancher data={this.state.data}
