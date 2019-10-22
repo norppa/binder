@@ -247,14 +247,11 @@ class Site extends React.Component {
                         setData={(data) => this.setState({ data })}
                         onSelect={this.select} />
                 </div>
-                <div>
-
-                    <div className="textarea-container">
-                        <textarea value={activeFile.contents}
-                            onChange={this.updateActive}
-                            disabled={activeFile.disabled} />
-                        </div>
-                    </div>
+                <div className="textarea-container">
+                    <textarea value={activeFile.contents}
+                        onChange={this.updateActive}
+                        disabled={activeFile.disabled} />
+                </div>
 
                 <Modals open={this.state.modal}
                     site={this.props.match.params.site}
