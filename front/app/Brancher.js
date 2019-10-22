@@ -23,7 +23,7 @@ class Brancher extends React.Component {
             <div className="brancher-node">
                 <div className={classNames}>
                     <div className="name-left" onClick={controls.select(file)}>
-                        <Icon size={36} className="icon" />
+                        <Icon size={28} className="icon" />
                         {
                             this.state.nameEditorOpen === file.id
                             ? <form onSubmit={controls.changeName}>
@@ -34,7 +34,7 @@ class Brancher extends React.Component {
                                     onBlur={controls.closeNameEditor}
                                     autoFocus />
                             </form>
-                            : file.name
+                            : <div className="name-box">{file.name}</div>
                         }
                     </div>
                     { file.selected ?
@@ -173,10 +173,10 @@ class Brancher extends React.Component {
         return (
             <div className="Brancher">
                 <div className="brancher-actions">
-                    <TiDocumentAdd size={36}
+                    <TiDocumentAdd size={28}
                         className="icon"
                         onClick={this.controls.createFile} />
-                    <TiFolderAdd size={36}
+                    <TiFolderAdd size={28}
                         className="icon"
                         onClick={this.controls.createFolder} />
                 </div>

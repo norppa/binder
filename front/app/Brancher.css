@@ -2,7 +2,7 @@
 }
 
 .name {
-    font-size: 1.5em;
+    font-size: 1em;
 }
 
 .brancher-node {
@@ -20,6 +20,12 @@
 .name-left {
     flex-grow: 99;
     cursor: pointer;
+}
+
+.name-box {
+    display: inline-block;
+    overflow: hidden;
+    max-width: 10em;
 }
 
 .name-right {
@@ -63,12 +69,14 @@
 }
 
 .name-input {
+    display: inline-block;
     font-family: "Times New Roman";
     color: #D8E6F3;
     background-color: #32394D;
     font-size: 1.1em;
-    width: 5em;
-    margin-bottom: 3px;
+    width: 9em;
+    margin: 0px 0px 3px 2px;
+    padding: 0px 0px 0px 2px;
 }
 
 form {
