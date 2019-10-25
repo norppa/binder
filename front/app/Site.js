@@ -5,7 +5,7 @@ import Modals from './Modals'
 import Brancher from './Brancher'
 import './Site.css'
 
-const api = 'http://localhost:3000/api'
+const api = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3000/api'
 
 Modal.setAppElement('#app')
 
@@ -247,10 +247,13 @@ class Site extends React.Component {
                         setData={(data) => this.setState({ data })}
                         onSelect={this.select} />
                 </div>
-                <div className="textarea-container">
-                    <textarea value={activeFile.contents}
-                        onChange={this.updateActive}
-                        disabled={activeFile.disabled} />
+                <div>
+
+                    <div className="textarea-container">
+                        <textarea value={activeFile.contents}
+                            onChange={this.updateActive}
+                            disabled={activeFile.disabled} />
+                        </div>
                 </div>
 
                 <Modals open={this.state.modal}
