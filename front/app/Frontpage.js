@@ -2,7 +2,7 @@ import React from 'react'
 import { Redirect } from 'react-router-dom'
 import './Frontpage.css'
 
-const api = 'http://localhost:3000/api'
+const api = process.env.NODE_ENV === 'production' ? '/binder/api' : 'http://localhost:3000/api'
 
 class Frontpage extends React.Component {
     state = {

@@ -5,7 +5,7 @@ import Modals from './Modals'
 import Brancher from './Brancher'
 import './Site.css'
 
-const api = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3000/api'
+const api = process.env.NODE_ENV === 'production' ? '/binder/api' : 'http://localhost:3000/api'
 
 Modal.setAppElement('#app')
 
