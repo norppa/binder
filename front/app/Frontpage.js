@@ -14,8 +14,9 @@ class Frontpage extends React.Component {
     }
 
     async componentDidMount() {
-        // console.log('Frontpage.componentDidMount')
-        const fetchResult = await fetch('http://localhost:3000/api')
+        console.log('Frontpage.componentDidMount')
+		console.log(process.env.NODE_ENV, api)
+        const fetchResult = await fetch(api)
         if (fetchResult.status !== 200) {
             this.setState({ errorMsg: 'Error fetching site information from the database'})
             return console.error('Error fetching the list of sites', fetchResult)
